@@ -1,0 +1,5 @@
+vars = Variables(None, ARGUMENTS)
+vars.Add(BoolVariable('DEBUG', 'Debug mode (1-enabled)', 0))
+env = Environment(variables = vars, CPPDEFINES={'DEBUG' : '${DEBUG}'})
+
+env.Program('bin/main', Glob('src/*.c'), CPPATH='./src')
