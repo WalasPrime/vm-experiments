@@ -1,4 +1,4 @@
-# Virtual Machine Experiments ![Travis Buildstatus](https://travis-ci.org/WalasPrime/vm-experiments.svg)
+# Virtual Machine Experiments [![Travis Buildstatus](https://travis-ci.org/WalasPrime/vm-experiments.svg)](https://travis-ci.org/WalasPrime/vm-experiments/)
 Very simple Virtual Machines (custom architecture) written in many languages for benchmarking purpose. A small project made to help understand the practical side of simulating a real logical computer architecture (not a physical one, we don't simulate delays on the transistors).
 
 ## Building
