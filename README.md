@@ -4,6 +4,12 @@ Very simple Virtual Machines (custom architecture) written in many languages for
 ## Building
 This project uses SCons 2.5.0 as it's buildsystem (which requires Python 2.7). After cloning this repo just execute the `scons` command to build all the executables.
 
+## Currently implemented machines
+Machine name | Description | Status
+---- | ---- | ----
+C | Pure C machine | On-hold (*had some issues with the old C syntax*)
+Cpp | Mixed C/C++ machine | Work-in-progress
+
 ## Architecture
 The following description is subject to change over time.
 

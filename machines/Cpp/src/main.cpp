@@ -1,10 +1,12 @@
 // C++ Implementation (note, right now this is based heavily on some unused C code)
 // Principles:
-//	- Heavy GOTO usage instead of functions
+//	- No special optimisations should be used here
+//	- This is the "it just works" machine
 
 #include "util.h"
 #include "arch.h"
 #include "memory.h"
+#include "assembler_loader.h"
 
 int main(){
 	if(DEBUG_MODE == 0){
@@ -19,6 +21,9 @@ int main(){
 
 	debug_printf("Memory manager is now created");
 	vm_memory_controller* mem = new vm_memory_controller();
+	
+	asm_loader asm_ldr;
+	asm_ldr.parse_file("programs/test_basic.asm");
 
 	debug_printf("CLEANING");
 	delete mem;
