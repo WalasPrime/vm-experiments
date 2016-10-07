@@ -54,7 +54,7 @@ class asm_loader {
 
 				debug_cout("LOADED LINE: " << std::string(LINE) << " (length " << line_length << ")");
 
-				#define ERROR(STR) {errorize(std::string(LINE), STR, current_line, cursor_pos); return false;}
+				#define ERROR(STR) {errorize(std::string(LINE), "SYNTAX ERROR: " STR, current_line, cursor_pos); return false;}
 
 				std::string current_word = "";
 				primary_state = NO_STATE;
@@ -71,10 +71,12 @@ class asm_loader {
 							ERROR("Invalid ASCII character found");
 						if(C == '@')
 							ERROR("Etiquette reference cannot be used as an instruction");
+						if(C == '#')
+							goto nextline;
 						primary_state = STATE_FETCHING_INITIAL_WORD;
 						goto nextchar_noadvance;
 					}else if(primary_state == STATE_FETCHING_INITIAL_WORD){
-						if(isblank(C)){
+						if(isblank(C) || C == '#'){
 							debug_cout("Loaded instruction " << current_word);
 							goto nextline;
 							// TODO: Load and process arguments
@@ -88,6 +90,8 @@ class asm_loader {
 							ERROR("Invalid character found, can\'t be used as an instruction name or an etiquette");
 						current_word += C;
 					}else if(primary_state == STATE_EXPECT_EOL){
+						if(C == '#')
+							goto nextline;
 						if(!isblank(C))
 							ERROR("Expected end-of-line");
 					}

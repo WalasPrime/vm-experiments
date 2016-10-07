@@ -1,5 +1,7 @@
-my_func:
-	add r0 r1
+# Comment
+
+my_func: # Comment
+	add r0 r1#Comment
 	mov r0 acc
 	jmp @f_check
 
