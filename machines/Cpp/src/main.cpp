@@ -27,6 +27,7 @@ int main(){
 		std::cout << "Error while compiling the program: " << std::endl << asm_ldr.last_error_str << " at line " << asm_ldr.last_error_line << " (col " << asm_ldr.last_error_col << ")" << std::endl;
 		std::cout << asm_ldr.last_error_line_content << std::endl;
 		std::cout << std::string(asm_ldr.last_error_col, ' ') << "^" << std::endl;
+		std::cout << std::string(asm_ldr.last_error_col, ' ') << asm_ldr.last_error_line_content[asm_ldr.last_error_col] << std::endl;
 	}else{
 		debug_printf("Program compiled succesfully");
 	}
