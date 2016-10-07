@@ -39,18 +39,18 @@ Feature name | Definition | Code example | Notes
 ---- | ---- | ---- | ----
 Instructions | [WHITESPACES]* [INSTRUCTION_NAME] [INSTRUCTION_ARGUMENTS]* | ADD R0 R1 | A line of code may define an instruction to execute by the CPU. It may be preceeded by any number of whitespace characters (spaces, tabs) and followed by arguments, which may be etiquettes. Instructions are not case-sensitive.
 Etiquette | [ETIQUETTE_NAME]: | my_function: | An etiquette allows the program to jump to the next instruction in the code (or to the next instruction after the one preceeding the etiquette).
-Etiquette reference | @[ETIQUETTE_NAME] | @my_function | If a reference is used, it should be replaced with the real value (address number).
+Etiquette reference | @[ETIQUETTE_NAME] | @my_function | If a reference is used, it should be replaced with the real value (address number). Etiquettes do not need to be defined before are used (but have to be defined later - multipass parsing is required).
 Comment | # [GENERIC_CONTENT] | # Some comment here | A comment sign `#` means the rest of the current line is to be ignored no matter what's after it.
 
 Example code:
 ```
 my_func: # Adds two numbers together (REG1 = REG1 + REG2)
-	add reg1 reg2
-	mov reg1 acc
+	add r1 r2
+	mov r1 acc
 	ret
 _start:
-	mov reg1 5
-	mov reg2 10
+	mov r1 5
+	mov r2 10
 	call @my_func
 	jmp @_start
 ```
@@ -61,6 +61,7 @@ Assembly language defines the following instructions (VM CPUs must properly impl
 Name | Instruction usage | Definition | Affected flags/Notes
 ---- | ---- | ---- | ----
 MOV | MOV REG1 REG2 | REG1 = REG2 | Z
+ | MOV REG VAL | REG = VAL | Z
 ADD | ADD REG1 REG2 | ACC = REG1 + REG2 | CZ
 ADC | ADC REG1 REG2 | ACC = REG1 + REG2 + (FLAGS[C] ? 1 : 0) | CZ
 SUB | SUB REG1 REG2 | ACC = REG1 - REG2 | CZ

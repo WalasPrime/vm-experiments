@@ -1,3 +1,4 @@
+#pragma once
 #include <stdint.h>
 
 enum _vm_opcodes {
@@ -57,9 +58,10 @@ const uint32_t _vm_opcode_length[] = {
 struct _vm_instruction {
 	uint8_t OPCODE;
 	union args {
-		struct ARG_REG2 {uint8_t REG1; uint8_t REG2;};
+		struct t_reg2 {uint8_t REG1; uint8_t REG2;};
+		struct t_reg_val {uint8_t REGx; uint32_t VAL;};
 		uint8_t REG;
-		uint32_t VAL;
+		uint32_t VALx;
 	};
 };
 

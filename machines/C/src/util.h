@@ -1,4 +1,5 @@
 #define CONCAT(A,B) A B
+#define ROUND_UP(N, S) ((((N) + (S) - 1) / (S)) * (S))
 
 #if DEBUG == 1
 	#define debug_printf(str, ...) printf(CONCAT(str,"\n"),__VA_ARGS__)
