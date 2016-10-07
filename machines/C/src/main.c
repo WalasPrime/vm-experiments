@@ -2,8 +2,8 @@
 
 // Pure C implementation
 // Principles:
-//	- GOTO's used as JMP's
-//	- Compiler and the execution mechanism must be contained within the same function for GOTO's to work
+//	- GOTO's used as the main flow control of VM execution
+//	- Compiler and the execution mechanism must be contained within the same function for GOTO's to work (?)
 
 #include "util.h"
 #include "arch.h"
