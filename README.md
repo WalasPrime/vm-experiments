@@ -67,7 +67,7 @@ Assembly language defines the following instructions (VM CPUs must properly impl
 Name | Instruction usage | Definition | Affected flags/Notes
 ---- | ---- | ---- | ----
 MOV | MOV REG1 REG2 | REG1 = REG2 | Z
- | MOV REG VAL | REG = VAL | Z
+CMOV | CMOV REG VAL | REG = VAL | Z
 ADD | ADD REG1 REG2 | ACC = REG1 + REG2 | CZ
 ADC | ADC REG1 REG2 | ACC = REG1 + REG2 + (FLAGS[C] ? 1 : 0) | CZ
 SUB | SUB REG1 REG2 | ACC = REG1 - REG2 | CZ

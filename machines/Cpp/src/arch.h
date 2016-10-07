@@ -5,6 +5,7 @@ enum _vm_opcodes {
 	_VM_INVALID_OPCODE_ = 0,
 
 	VM_OPCODE_MOV,
+	VM_OPCODE_CMOV,
 	VM_OPCODE_ADD,
 	VM_OPCODE_ADC,
 	VM_OPCODE_SUB,
@@ -32,6 +33,7 @@ const uint32_t _vm_opcode_length[] = {
 	0, // _VM_INVALID_OPCODE_
 
 	1, // VM_OPCODE_MOV
+	2, // VM_OPCODE_CMOV
 	1, // VM_OPCODE_ADD
 	1, // VM_OPCODE_ADC
 	1, // VM_OPCODE_SUB
@@ -55,13 +57,35 @@ const uint32_t _vm_opcode_length[] = {
 	1  // VM_OPCODE_RET
 };
 
+enum _vm_registers {
+	_VM_INVALID_REG_ = 0,
+
+	VM_REG_PC,
+	VM_REG_FLAGS,
+	VM_REG_ACC,
+	VM_REG_DS,
+	VM_REG_SS,
+	VM_REG_SP,
+	VM_REG_R0,
+	VM_REG_R1,
+	VM_REG_R2,
+	VM_REG_R3,
+	VM_REG_R4,
+	VM_REG_R5,
+	VM_REG_R6,
+	VM_REG_R7,
+	VM_REG_R8,
+	VM_REG_R9,
+	VM_REG_R10,
+	VM_REG_R11
+};
+
 struct _vm_instruction {
 	uint8_t OPCODE;
-	union args {
-		struct t_reg2 {uint8_t REG1; uint8_t REG2;};
-		struct t_reg_val {uint8_t REGx; uint32_t VAL;};
-		uint8_t REG;
-		uint32_t VALx;
+	union {
+		struct {uint8_t REG1; uint8_t REG2;};
+		struct {uint8_t __unused1; uint32_t oVAL;}; // offsetValue
+		uint32_t VAL;
 	};
 };
 
@@ -76,3 +100,4 @@ struct _vm_memcell_ext {
 typedef _vm_instruction vm_instruction;
 typedef _vm_opcodes vm_opcodes;
 typedef _vm_memcell vm_memcell;
+typedef _vm_registers vm_registers;

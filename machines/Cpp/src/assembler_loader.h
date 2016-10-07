@@ -36,8 +36,18 @@ class asm_loader_instruction_store {
 			return (etiquettes.find(name) != etiquettes.end());
 		}
 
+		uint32_t get_etiquette_addr(std::string const& name){
+			return etiquettes[name];
+		}
+
 		void append_arg_to_last_instruction(std::string const& arg){
 			instructions[instructions.size()-1].add_arg(arg);
+		}
+
+		asm_loader_raw_instruction* get_instruction(uint32_t const& number){
+			if(number < instructions.size())
+				return &instructions[number];
+			return NULL;
 		}
 };
 
@@ -48,8 +58,31 @@ class asm_loader {
 
 			STATE_FETCHING_INITIAL_WORD,	// Reading some characters for the first word
 			STATE_EXPECT_EOL,				// Excepting \n at the next character
-			STATE_FETCHING_ARGUMENTS		// Reading characters for arguments
+			STATE_FETCHING_ARGUMENTS,		// Reading characters for arguments
+			STATE_ARGUMENTS_SPACES			// Reading spaces between arguments
 		};
+		enum OPCODE_INSTRUCTION_FORMATS {
+			OPCODE_NO_ARGUMENTS = 0,
+			OPCODE_VALUE_32BIT,
+			OPCODE_REG,
+			OPCODE_REG_VALUE_32BIT,
+			OPCODE_REG_REG
+		};
+		typedef struct _opcode_dictionary {
+			std::string identifier;
+			OPCODE_INSTRUCTION_FORMATS format;
+			vm_opcodes code;
+
+			_opcode_dictionary(){identifier="__NAN__"; format = OPCODE_NO_ARGUMENTS;code = _VM_INVALID_OPCODE_;}
+			_opcode_dictionary(std::string const& n, OPCODE_INSTRUCTION_FORMATS const& f, vm_opcodes const& c) : identifier(n), format(f), code(c) {}
+		} opcode_dictionary_str;
+		typedef struct _reg_dictionary {
+			std::string identifier;
+			vm_registers code;
+
+			_reg_dictionary(){identifier="__NAN_REG__"; code = _VM_INVALID_REG_;}
+			_reg_dictionary(std::string const& n, vm_registers const& c) : identifier(n), code(c) {}
+		} reg_dictionary_str;
 
 		PARSER_STATES primary_state;
 	public:
@@ -58,12 +91,62 @@ class asm_loader {
 		uint16_t last_error_col;
 		std::string last_error_line_content;
 
+		std::map<std::string, opcode_dictionary_str> op_dictionary;
+		std::map<std::string, reg_dictionary_str> reg_dictionary;
+
 		asm_loader(){
 			primary_state = NO_STATE;
 			last_error_str = "";
 			last_error_line_content = "";
 			last_error_line = 0;
 			last_error_col = 0;
+
+			add_op_dict("MOV", OPCODE_REG_REG, VM_OPCODE_MOV);
+			add_op_dict("CMOV", OPCODE_REG_VALUE_32BIT, VM_OPCODE_CMOV);
+			add_op_dict("ADD", OPCODE_REG_REG, VM_OPCODE_ADD);
+			add_op_dict("ADC", OPCODE_REG_REG, VM_OPCODE_ADC);
+			add_op_dict("SUB", OPCODE_REG_REG, VM_OPCODE_SUB);
+			add_op_dict("SBC", OPCODE_REG_REG, VM_OPCODE_SBC);
+			add_op_dict("CLF", OPCODE_NO_ARGUMENTS, VM_OPCODE_CLF);
+			add_op_dict("LOAD", OPCODE_VALUE_32BIT, VM_OPCODE_LOAD);
+			add_op_dict("SAVE", OPCODE_REG, VM_OPCODE_SAVE);
+			add_op_dict("CMP", OPCODE_REG_REG, VM_OPCODE_CMP);
+			add_op_dict("JMP", OPCODE_VALUE_32BIT, VM_OPCODE_JMP);
+			add_op_dict("JE", OPCODE_VALUE_32BIT, VM_OPCODE_JE);
+			add_op_dict("JNE", OPCODE_VALUE_32BIT, VM_OPCODE_JNE);
+			add_op_dict("JL", OPCODE_VALUE_32BIT, VM_OPCODE_JL);
+			add_op_dict("JLE", OPCODE_VALUE_32BIT, VM_OPCODE_JLE);
+			add_op_dict("JG", OPCODE_VALUE_32BIT, VM_OPCODE_JG);
+			add_op_dict("JGE", OPCODE_VALUE_32BIT, VM_OPCODE_JGE);
+			add_op_dict("CALL", OPCODE_VALUE_32BIT, VM_OPCODE_CALL);
+			add_op_dict("RET", OPCODE_NO_ARGUMENTS, VM_OPCODE_RET);
+
+			add_reg_dict("PC", VM_REG_PC);
+			add_reg_dict("FLAGS", VM_REG_FLAGS);
+			add_reg_dict("ACC", VM_REG_ACC);
+			add_reg_dict("DS", VM_REG_DS);
+			add_reg_dict("SS", VM_REG_SS);
+			add_reg_dict("SP", VM_REG_SP);
+			add_reg_dict("R0", VM_REG_R0);
+			add_reg_dict("R1", VM_REG_R1);
+			add_reg_dict("R2", VM_REG_R2);
+			add_reg_dict("R3", VM_REG_R3);
+			add_reg_dict("R4", VM_REG_R4);
+			add_reg_dict("R5", VM_REG_R5);
+			add_reg_dict("R6", VM_REG_R6);
+			add_reg_dict("R7", VM_REG_R7);
+			add_reg_dict("R8", VM_REG_R8);
+			add_reg_dict("R9", VM_REG_R9);
+			add_reg_dict("R10", VM_REG_R10);
+			add_reg_dict("R11", VM_REG_R11);
+		}
+
+		void add_op_dict(std::string const& asm_code, OPCODE_INSTRUCTION_FORMATS const& format, vm_opcodes const& code){
+			op_dictionary[asm_code] = opcode_dictionary_str(asm_code, format, code);
+		}
+
+		void add_reg_dict(std::string const& asm_code, vm_registers const& code){
+			reg_dictionary[asm_code] = reg_dictionary_str(asm_code, code);
 		}
 
 		void errorize(std::string raw_line, std::string description, uint16_t line_num, uint16_t column){
@@ -82,6 +165,7 @@ class asm_loader {
 			debug_cout("Opened " << path << " for compilation");
 
 			asm_loader_instruction_store instructions;
+			// FIRST PASS - Load lines, convert to an array of simple instructions
 			char LINE[512];
 			uint16_t current_line = 1;
 			while(!f.eof()){
@@ -96,13 +180,20 @@ class asm_loader {
 
 				std::string current_word = "";
 				primary_state = NO_STATE;
-				while(cursor_pos < line_length){
+				while(cursor_pos <= line_length){
 					nextchar_noadvance:
-					char C = toupper(LINE[cursor_pos]);
+					char C = '\n';
+					bool is_last_char = true;
+					if(cursor_pos < line_length){
+						C = toupper(LINE[cursor_pos]);
+						is_last_char = false;
+					}
 
 					if(primary_state == NO_STATE){
 						if(isblank(C))
 							goto nextchar;
+						if(is_last_char)
+							goto nextline;
 						if(isdigit(C))
 							ERROR("Instruction cannot start with a number");
 						if(!isprint(C))
@@ -114,12 +205,12 @@ class asm_loader {
 						primary_state = STATE_FETCHING_INITIAL_WORD;
 						goto nextchar_noadvance;
 					}else if(primary_state == STATE_FETCHING_INITIAL_WORD){
-						if(isblank(C) || C == '#'){
+						if(isblank(C) || C == '#' || is_last_char){
 							debug_cout("Loaded instruction " << current_word);
 							instructions.add_new_instruction(current_word);
 							current_word = "";
-							primary_state = STATE_FETCHING_ARGUMENTS;
-							if(C == '#')
+							primary_state = STATE_ARGUMENTS_SPACES;
+							if(C == '#' || is_last_char)
 								goto nextline;
 							goto nextchar;
 						}
@@ -135,18 +226,27 @@ class asm_loader {
 							ERROR("Invalid character found, can\'t be used as an instruction name or an etiquette");
 						current_word += C;
 					}else if(primary_state == STATE_FETCHING_ARGUMENTS){
-						if(isblank(C) || C == '#'){
-							if(current_word.length() > 0)
+						if(isblank(C) || C == '#' || is_last_char){
+							if(current_word.length() > 0){
+								debug_cout("  Added argument " << current_word);
 								instructions.append_arg_to_last_instruction(current_word);
-							if(C == '#')
+								current_word = "";
+								primary_state = STATE_ARGUMENTS_SPACES;
+							}
+							if(C == '#' || is_last_char)
 								goto nextline;
 							goto nextchar;
 						}
 						if(!isalnum(C) && C != '@' && C != '_' && C != '-')
 							ERROR("Invalid character found, can\'t be used as an argument or an etiquette reference");
 						current_word += C;
+					}else if(primary_state == STATE_ARGUMENTS_SPACES){
+						if(!isblank(C)){
+							primary_state = STATE_FETCHING_ARGUMENTS;
+							goto nextchar_noadvance;
+						}
 					}else if(primary_state == STATE_EXPECT_EOL){
-						if(C == '#')
+						if(C == '#' || is_last_char)
 							goto nextline;
 						if(!isblank(C))
 							ERROR("Expected end-of-line");
@@ -157,6 +257,32 @@ class asm_loader {
 				}
 				nextline:
 				current_line++;
+			}
+
+			// SECOND PASS - Convert the instruction array to raw opcodes written into the memory
+			for(uint32_t i = 0; i < instructions.instructions.size(); i++){
+				asm_loader_raw_instruction* op = instructions.get_instruction(i);
+				if(!op){
+					debug_printf("Tried to process an instruction, but fetching resulted in a NULL!");
+					return false;
+				}
+
+				vm_instruction opcode;
+
+				// If any of the arguments refer to an etiquette then replace it with the address
+				for(uint32_t j = 0; j < op->INSTRUCTION_ARGS.size(); j++){
+					if(op->INSTRUCTION_ARGS[j][0] == '@'){
+						debug_cout("Found a reference in " << op->INSTRUCTION_ARGS[j]);
+						std::string et = op->INSTRUCTION_ARGS[j].substr(1);
+						if(instructions.is_etiquette_defined(et)){
+							uint32_t addr = instructions.get_etiquette_addr(et);
+							debug_cout("Etiquette resolved as " << addr);
+						}else{
+							errorize(op->INSTRUCTION_ARGS[j], std::string("ETIQUETTE SOLVER: Etiquette is undefined: ")+op->INSTRUCTION_ARGS[j], 0, 0);
+							return false;
+						}
+					}
+				}
 			}
 
 			return true;
