@@ -1,6 +1,7 @@
 #pragma once
 #include <fstream>
 #include <ctype.h>
+#include <cstring>
 
 #include "util.h"
 
@@ -36,7 +37,7 @@ class asm_loader {
 		}
 
 		bool parse_file(std::string path){
-			std::ifstream f(path);
+			std::ifstream f(path.c_str());
 			if(!f.is_open()){
 				debug_cout("File " << path << " could not be opened for compiling");
 				return false;
