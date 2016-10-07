@@ -6,8 +6,8 @@ my_func: # Comment
 	jmp @f_check
 
 _start:
-	mov r0 5
-	mov r1 10
+	cmov r0 5
+	cmov r1 10
 	jmp @my_func
 	
 f_check:

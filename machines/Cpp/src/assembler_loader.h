@@ -1,5 +1,6 @@
 #pragma once
 #include <fstream>
+#include <stdlib.h>
 #include <ctype.h>
 #include <cstring>
 #include <vector>
@@ -12,7 +13,10 @@ class asm_loader_raw_instruction {
 		std::string INSTRUCTION_NAME;
 		std::vector<std::string> INSTRUCTION_ARGS;
 
-		asm_loader_raw_instruction(std::string const& name) : INSTRUCTION_NAME(name) {}
+		std::string raw_line;
+		uint16_t line_num;
+
+		asm_loader_raw_instruction(std::string const& name, std::string const& line, uint16_t const& line_n) : INSTRUCTION_NAME(name), raw_line(line), line_num(line_n) {}
 
 		void add_arg(std::string const& arg){
 			INSTRUCTION_ARGS.push_back(arg);
@@ -24,8 +28,8 @@ class asm_loader_instruction_store {
 		std::vector<asm_loader_raw_instruction> instructions;
 		std::map<std::string, uint32_t> etiquettes;
 
-		void add_new_instruction(std::string const& name){
-			instructions.push_back(asm_loader_raw_instruction(name));
+		void add_new_instruction(std::string const& name, std::string const& raw_line, uint16_t const& line_num){
+			instructions.push_back(asm_loader_raw_instruction(name, raw_line, line_num));
 		}
 
 		void etiquette_next_instruction(std::string const& name){
@@ -62,7 +66,8 @@ class asm_loader {
 			STATE_ARGUMENTS_SPACES			// Reading spaces between arguments
 		};
 		enum OPCODE_INSTRUCTION_FORMATS {
-			OPCODE_NO_ARGUMENTS = 0,
+			_OPCODE_INVALID_FORMAT_ = 0,
+			OPCODE_NO_ARGUMENTS,
 			OPCODE_VALUE_32BIT,
 			OPCODE_REG,
 			OPCODE_REG_VALUE_32BIT,
@@ -141,6 +146,30 @@ class asm_loader {
 			add_reg_dict("R11", VM_REG_R11);
 		}
 
+		OPCODE_INSTRUCTION_FORMATS get_instruction_format(std::string const& name){
+			if(op_dictionary.find(name) != op_dictionary.end()){
+				return op_dictionary[name].format;
+			}else{
+				return _OPCODE_INVALID_FORMAT_;
+			}
+		}
+
+		vm_opcodes get_instruction_opcode(std::string const& name){
+			if(op_dictionary.find(name) != op_dictionary.end()){
+				return op_dictionary[name].code;
+			}else{
+				return _VM_INVALID_OPCODE_;
+			}
+		}
+
+		vm_registers get_register_code(std::string const& name){
+			if(reg_dictionary.find(name) != reg_dictionary.end()){
+				return reg_dictionary[name].code;
+			}else{
+				return _VM_INVALID_REG_;
+			}
+		}
+
 		void add_op_dict(std::string const& asm_code, OPCODE_INSTRUCTION_FORMATS const& format, vm_opcodes const& code){
 			op_dictionary[asm_code] = opcode_dictionary_str(asm_code, format, code);
 		}
@@ -207,7 +236,7 @@ class asm_loader {
 					}else if(primary_state == STATE_FETCHING_INITIAL_WORD){
 						if(isblank(C) || C == '#' || is_last_char){
 							debug_cout("Loaded instruction " << current_word);
-							instructions.add_new_instruction(current_word);
+							instructions.add_new_instruction(current_word, std::string(LINE), current_line);
 							current_word = "";
 							primary_state = STATE_ARGUMENTS_SPACES;
 							if(C == '#' || is_last_char)
@@ -258,6 +287,8 @@ class asm_loader {
 				nextline:
 				current_line++;
 			}
+			#undef ERROR
+			#define ERROR(STR) {errorize(op->raw_line, "COMPILATION ERROR: " STR, op->line_num, 0); return false;}
 
 			// SECOND PASS - Convert the instruction array to raw opcodes written into the memory
 			for(uint32_t i = 0; i < instructions.instructions.size(); i++){
@@ -268,23 +299,70 @@ class asm_loader {
 				}
 
 				vm_instruction opcode;
+				memset(&opcode, 0, sizeof(opcode));
+				if(opcode.OPCODE != 0 || opcode.oVAL != 0 || opcode.REG1 != 0)
+					ERROR("Internal error, initial opcode not zero\'ed");
 
-				// If any of the arguments refer to an etiquette then replace it with the address
-				for(uint32_t j = 0; j < op->INSTRUCTION_ARGS.size(); j++){
-					if(op->INSTRUCTION_ARGS[j][0] == '@'){
-						debug_cout("Found a reference in " << op->INSTRUCTION_ARGS[j]);
-						std::string et = op->INSTRUCTION_ARGS[j].substr(1);
-						if(instructions.is_etiquette_defined(et)){
-							uint32_t addr = instructions.get_etiquette_addr(et);
-							debug_cout("Etiquette resolved as " << addr);
-						}else{
-							errorize(op->INSTRUCTION_ARGS[j], std::string("ETIQUETTE SOLVER: Etiquette is undefined: ")+op->INSTRUCTION_ARGS[j], 0, 0);
+				opcode.OPCODE = get_instruction_opcode(op->INSTRUCTION_NAME);
+				OPCODE_INSTRUCTION_FORMATS format = get_instruction_format(op->INSTRUCTION_NAME);
+
+				switch(format){
+					case _OPCODE_INVALID_FORMAT_: ERROR("Unknown instruction name"); break;
+					case OPCODE_REG_REG:
+						if(op->INSTRUCTION_ARGS.size() != 2)
+							ERROR("Invalid argument count (expected 2 register identifiers)");
+						opcode.REG1 = get_register_code(op->INSTRUCTION_ARGS[0]);
+						opcode.REG2 = get_register_code(op->INSTRUCTION_ARGS[1]);
+						if(opcode.REG1 == _VM_INVALID_REG_)
+							ERROR("Unknown register (first argument)");
+						if(opcode.REG2 == _VM_INVALID_REG_)
+							ERROR("Unknown register (second argument)");
+					break;
+					case OPCODE_REG:
+						if(op->INSTRUCTION_ARGS.size() != 1)
+							ERROR("Invalid argument count (expected 1 register identifier)");
+						opcode.REG1 = get_register_code(op->INSTRUCTION_ARGS[0]);
+						if(opcode.REG1 == _VM_INVALID_REG_)
+							ERROR("Unknown register");
+					break;
+					case OPCODE_VALUE_32BIT:
+						if(op->INSTRUCTION_ARGS.size() != 1)
+							ERROR("Invalid argument count (expected 1 address or etiquette)");
+						if(!format_numeric_value(&instructions, op, 0, opcode.VAL))
 							return false;
-						}
-					}
+					break;
+					case OPCODE_REG_VALUE_32BIT:
+						if(op->INSTRUCTION_ARGS.size() != 2)
+							ERROR("Invalid argument count (expected a register identifier and an address, value or etiquette)");
+						opcode.REG1 = get_register_code(op->INSTRUCTION_ARGS[0]);
+						if(!format_numeric_value(&instructions, op, 1, opcode.oVAL))
+							return false;
+						if(opcode.REG1 == _VM_INVALID_REG_)
+							ERROR("Unknown register");
+					break;
+					default:
+						ERROR("Unknown format used by this instruction, cannot compile");
 				}
+				// TODO: Do something with the opcode
 			}
 
+			return true;
+			#undef ERROR
+		}
+
+		bool format_numeric_value(asm_loader_instruction_store * store, asm_loader_raw_instruction * op, uint16_t const& which_arg, uint32_t & dst){
+			if(op->INSTRUCTION_ARGS[which_arg][0] == '@'){
+				debug_cout("Dereferencing " << op->INSTRUCTION_ARGS[which_arg]);
+				std::string et = op->INSTRUCTION_ARGS[which_arg].substr(1);
+				if(store->is_etiquette_defined(et)){
+					dst = store->get_etiquette_addr(et);
+					return true;
+				}else{
+					errorize(op->raw_line, "ETIQUETTE SOLVER: Tried to use an undefined etiquette", op->line_num, 0);
+					return false;
+				}
+			}
+			dst = atoi(op->INSTRUCTION_ARGS[which_arg].c_str());
 			return true;
 		}
 };
