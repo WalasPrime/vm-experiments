@@ -7,6 +7,7 @@
 #include <map>
 
 #include "util.h"
+#include "memory.h"
 
 class asm_loader_raw_instruction {
 	public:
@@ -185,7 +186,7 @@ class asm_loader {
 			last_error_line_content = raw_line;
 		}
 
-		bool parse_file(std::string path){
+		bool parse_file(std::string path, vm_memory_controller* mem){
 			std::ifstream f(path.c_str());
 			if(!f.is_open()){
 				debug_cout("File " << path << " could not be opened for compiling");
@@ -291,6 +292,7 @@ class asm_loader {
 			#define ERROR(STR) {errorize(op->raw_line, "COMPILATION ERROR: " STR, op->line_num, 0); return false;}
 
 			// SECOND PASS - Convert the instruction array to raw opcodes written into the memory
+			uint32_t current_mem_ptr = 0;
 			for(uint32_t i = 0; i < instructions.instructions.size(); i++){
 				asm_loader_raw_instruction* op = instructions.get_instruction(i);
 				if(!op){
@@ -343,7 +345,9 @@ class asm_loader {
 					default:
 						ERROR("Unknown format used by this instruction, cannot compile");
 				}
-				// TODO: Do something with the opcode
+				
+				mem->write_address_ext(current_mem_ptr, (uint32_t*)&opcode, ROUND_UP(sizeof(opcode), 4));
+				current_mem_ptr += vm_opcode_length[opcode.OPCODE];
 			}
 
 			return true;

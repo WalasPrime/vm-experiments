@@ -23,7 +23,7 @@ int main(){
 	vm_memory_controller* mem = new vm_memory_controller();
 
 	asm_loader asm_ldr;
-	if(!asm_ldr.parse_file("programs/test_basic.asm")){
+	if(!asm_ldr.parse_file("programs/test_basic.asm", mem)){
 		std::cout << "Error while compiling the program: " << std::endl << asm_ldr.last_error_str << " at line " << asm_ldr.last_error_line << " (col " << asm_ldr.last_error_col << ")" << std::endl;
 		std::cout << asm_ldr.last_error_line_content << std::endl;
 		std::cout << std::string(asm_ldr.last_error_col, ' ') << "^" << std::endl;

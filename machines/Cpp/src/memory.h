@@ -1,5 +1,7 @@
 #pragma once
 
+#include "util.h"
+
 #define VM_MAX_MEM_ADDR (0xFFFFFFFF-1)
 #define VM_MGR_MEMORY_SEGMENT_SIZE (4096*100)
 #define VM_MGR_MEMORY_SEGMENT_COUNT (VM_MAX_MEM_ADDR/VM_MGR_MEMORY_SEGMENT_SIZE+1)
@@ -32,16 +34,19 @@ class vm_memory_controller {
 		bool touch_address(uint32_t addr){
 			uint32_t segment = VM_ADDR_SEGMENT(addr);
 			if(this->segments[segment] == NULL){
-
+				return this->allocate_segment(segment);
 			}
+			return true;
 		}
 
 		bool allocate_segment(uint32_t seg_num){
 			vm_memory_segment* seg = new vm_memory_segment;
 			if(seg){
+				debug_printf("Allocated segment %u (%u bytes)", seg_num, VM_MGR_MEMORY_SEGMENT_SIZE);
 				this->segments[seg_num] = seg;
 				return true;
 			}else{
+				debug_printf("Failed to allocate segment %u (%u bytes)", seg_num, VM_MGR_MEMORY_SEGMENT_SIZE);
 				return false;
 			}
 		}
@@ -62,5 +67,19 @@ class vm_memory_controller {
 			}else{
 				return false;
 			}
+		}
+
+		bool write_address_ext(uint32_t addr, uint32_t* data, uint8_t count){
+			for(uint8_t i = 0; i < count; i++)
+				if(!this->write_address(addr+i, data[i]))
+					return false;
+			return true;
+		}
+
+		bool read_address_ext(uint32_t addr, uint32_t* target, uint8_t count){
+			for(uint8_t i = 0; i < count; i++)
+				if(!this->read_address(addr+i, target[i]))
+					return false;
+			return true;
 		}
 };

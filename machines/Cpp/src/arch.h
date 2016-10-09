@@ -29,7 +29,7 @@ enum _vm_opcodes {
 	VM_OPCODE_RET
 };
 
-const uint32_t _vm_opcode_length[] = {
+const uint32_t vm_opcode_length[] = {
 	0, // _VM_INVALID_OPCODE_
 
 	1, // VM_OPCODE_MOV
@@ -80,6 +80,7 @@ enum _vm_registers {
 	VM_REG_R11
 };
 
+#pragma pack(push, 1)
 struct _vm_instruction {
 	uint8_t OPCODE;
 	union {
@@ -88,6 +89,7 @@ struct _vm_instruction {
 		uint32_t VAL;
 	};
 };
+#pragma pack(pop)
 
 struct _vm_memcell {
 	uint32_t mem;
