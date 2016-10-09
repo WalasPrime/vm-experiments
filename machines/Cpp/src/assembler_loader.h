@@ -363,6 +363,12 @@ class asm_loader {
 				}
 			}
 			dst = atoi(op->INSTRUCTION_ARGS[which_arg].c_str());
+			char buff[128];
+			itoa(dst, buff, 10);
+			if(std::string(buff) != op->INSTRUCTION_ARGS[which_arg]){
+				errorize(op->raw_line, "Invalid formatting of an absolute value", op->line_num, 0);
+				return false;
+			}
 			return true;
 		}
 };
