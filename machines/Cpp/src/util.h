@@ -7,7 +7,6 @@
 #include <iostream>
 
 #if DEBUG == 1
-	#define debug_printf(str, ...) printf(CONCAT(str,"\n"),__VA_ARGS__)
 	#define debug_cout(A) std::cout << A << std::endl
 	#define DEBUG_MODE 1
 #else
@@ -46,4 +45,12 @@
 		}
 		return result;
 	}
+
+	#if DEBUG_MODE
+		#define debug_printf(str, ...) printf(CONCAT(str,"\n"),##__VA_ARGS__)
+	#endif
+#else
+	#if DEBUG_MODE
+		#define debug_printf(str, ...) printf(CONCAT(str,"\n"),__VA_ARGS__)
+	#endif
 #endif

@@ -1,5 +1,14 @@
 language: c
+sudo: false
 compiler:
   - clang
   - gcc
-script: scons
+env:
+  - DEBUG_MODE=1
+  - DEBUG_MODE=0
+before_script:
+  - export DEBUG_SUFFIX=
+  - if [ "$DEBUG_MODE" = "1" ]; then export DEBUG_SUFFIX=_debug; fi
+script: 
+  - scons DEBUG=$DEBUG_MODE
+  - ./machines/Cpp/bin/c_machine$DEBUG_SUFFIX
