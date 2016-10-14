@@ -1,5 +1,7 @@
 #pragma once
 
+#include <iomanip>
+
 #include "util.h"
 
 #define VM_MAX_MEM_ADDR (0xFFFFFFFF-1)
@@ -44,6 +46,7 @@ class vm_memory_controller {
 			if(seg){
 				debug_printf("Allocated segment %u (%u bytes)", seg_num, VM_MGR_MEMORY_SEGMENT_SIZE);
 				this->segments[seg_num] = seg;
+				memset(seg, 0, sizeof(vm_memory_segment));
 				return true;
 			}else{
 				debug_printf("Failed to allocate segment %u (%u bytes)", seg_num, VM_MGR_MEMORY_SEGMENT_SIZE);
@@ -54,6 +57,7 @@ class vm_memory_controller {
 		bool write_address(uint32_t addr, uint32_t val){
 			if(this->touch_address(addr)){
 				this->segments[VM_ADDR_SEGMENT(addr)]->cell[VM_ADDR_SEG_LOCAL(addr)].mem = val;
+				debug_printf("MEM WRITE %u at %u", val, addr);
 				return true;
 			}else{
 				return false;
@@ -81,5 +85,21 @@ class vm_memory_controller {
 				if(!this->read_address(addr+i, target[i]))
 					return false;
 			return true;
+		}
+
+		void dump_mem(uint32_t const& addr_from, uint32_t const& length){
+			std::cout << std::setfill('0') << std::setw(2);
+			uint32_t val;
+			vm_memcell8* val8;
+			val8 = (vm_memcell8*)&val;
+			for(uint32_t i = addr_from; i < addr_from+length; i++){
+				this->read_address(i, val);
+				std::cout << std::dec << i << std::hex << ": " << (uint32_t)val8->mem[0] << ":" << (uint32_t)val8->mem[1] << ":" << (uint32_t)val8->mem[2] << ":" << (uint32_t)val8->mem[3];
+				if(val8->mem[0] > _VM_INVALID_OPCODE_ && val8->mem[0] < _VM_OPCODE_LIMIT_){
+					std::cout << "  (OP: " << std::dec << (uint32_t)val8->mem[0] << ")";
+				}
+				std::cout << std::endl;
+			}
+			std::cout << std::dec << std::endl;
 		}
 };

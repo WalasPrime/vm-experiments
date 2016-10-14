@@ -36,6 +36,7 @@ int main(){
 
 	vm_cpu exec(mem);
 	exec.execute_continuous();
+	mem->dump_mem(0,32);
 
 	debug_printf("CLEANING");
 	delete mem;

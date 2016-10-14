@@ -107,6 +107,10 @@ struct _vm_memcell {
 	uint32_t mem;
 };
 
+struct _vm_memcell8 {
+	uint8_t mem[4];
+};
+
 struct _vm_memcell_ext {
 	struct _vm_memcell word[2];
 };
@@ -117,3 +121,4 @@ typedef _vm_memcell vm_memcell;
 typedef _vm_memcell_ext vm_memcell_ext;
 typedef _vm_registers vm_registers;
 typedef _vm_flags vm_flags;
+typedef _vm_memcell8 vm_memcell8;

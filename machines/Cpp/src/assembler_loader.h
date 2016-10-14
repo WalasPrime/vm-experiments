@@ -379,7 +379,8 @@ class asm_loader {
 					
 					op->written_mem_addr = current_mem_ptr;
 					if(can_write){
-						mem->write_address_ext(current_mem_ptr, (uint32_t*)&opcode, ROUND_UP(sizeof(opcode), 4));
+						//mem->write_address_ext(current_mem_ptr, (uint32_t*)&opcode, ROUND_UP(sizeof(opcode), 4));
+						mem->write_address_ext(current_mem_ptr, (uint32_t*)&opcode, vm_opcode_length[opcode.OPCODE]);
 						op->written_to_mem = true;
 						debug_cout("Written " << op->raw_line << " at mem " << op->written_mem_addr);
 					}else if(memwrite == 1){
@@ -388,6 +389,14 @@ class asm_loader {
 					current_mem_ptr += vm_opcode_length[opcode.OPCODE];
 				}
 			}
+
+			#if DEBUG_MODE
+				debug_cout("COMPILATION SUMMARY");
+				for(uint32_t i = 0; i < instructions.instructions.size(); i++){
+					debug_cout("INSTR: " << instructions.instructions[i].raw_line << " @ " << instructions.instructions[i].written_mem_addr);
+				}
+				debug_cout("END OF SUMMARY");
+			#endif
 
 			return true;
 			#undef ERROR
@@ -403,10 +412,10 @@ class asm_loader {
 				if(store->is_etiquette_defined(et)){
 					asm_loader_raw_instruction* ref_op = store->get_etiquette_instruction(et);
 					dst = ref_op->written_mem_addr;
-					if(!ref_op->written_to_mem){
+					/*if(!ref_op->written_to_mem){
 						errorize(op->raw_line, "ETIQUETTE SOLVER: Tried to reference an unwritten instruction (unknown addr)", op->line_num, 0);
 						return false;
-					}
+					}*/
 					debug_cout("Resolved addr " << dst << " (" << store->get_etiquette_instruction(et)->raw_line << ")");
 					return true;
 				}else{
