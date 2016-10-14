@@ -11,3 +11,4 @@ _start:
 	jmp @my_func
 	
 f_check:
+	cmov r0 0

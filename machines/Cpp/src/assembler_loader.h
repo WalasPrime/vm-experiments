@@ -17,7 +17,13 @@ class asm_loader_raw_instruction {
 		std::string raw_line;
 		uint16_t line_num;
 
-		asm_loader_raw_instruction(std::string const& name, std::string const& line, uint16_t const& line_n) : INSTRUCTION_NAME(name), raw_line(line), line_num(line_n) {}
+		bool written_to_mem;
+		uint32_t written_mem_addr;
+
+		asm_loader_raw_instruction(std::string const& name, std::string const& line, uint16_t const& line_n) : INSTRUCTION_NAME(name), raw_line(line), line_num(line_n) {
+			written_to_mem = false;
+			written_mem_addr = 0;
+		}
 
 		void add_arg(std::string const& arg){
 			INSTRUCTION_ARGS.push_back(arg);
@@ -42,7 +48,10 @@ class asm_loader_instruction_store {
 		}
 
 		uint32_t get_etiquette_addr(std::string const& name){
-			return etiquettes[name];
+			return instructions[etiquettes[name]].written_mem_addr;
+		}
+		asm_loader_raw_instruction* get_etiquette_instruction(std::string const& name){
+			return &instructions[etiquettes[name]];
 		}
 
 		void append_arg_to_last_instruction(std::string const& arg){
@@ -291,67 +300,100 @@ class asm_loader {
 			#undef ERROR
 			#define ERROR(STR) {errorize(op->raw_line, "COMPILATION ERROR: " STR, op->line_num, 0); return false;}
 
-			// SECOND PASS - Convert the instruction array to raw opcodes written into the memory
-			uint32_t current_mem_ptr = 0;
-			for(uint32_t i = 0; i < instructions.instructions.size(); i++){
-				asm_loader_raw_instruction* op = instructions.get_instruction(i);
-				if(!op){
-					debug_printf("Tried to process an instruction, but fetching resulted in a NULL!");
-					return false;
+			// SECOND PASS [memwrite=0] - Determine instruction lengths (or execute third-pass if not referencing etiquettes)
+			// THIRD PASS [memwrite=1] - Convert the instruction array to raw opcodes written into the memory
+			uint32_t current_mem_ptr;
+			
+			for(uint8_t memwrite = 0; memwrite <= 1; memwrite++){
+				current_mem_ptr = 0;
+				for(uint32_t i = 0; i < instructions.instructions.size(); i++){
+					asm_loader_raw_instruction* op = instructions.get_instruction(i);
+					if(!op){
+						debug_printf("Tried to process an instruction, but fetching resulted in a NULL!");
+						return false;
+					}
+
+					vm_instruction opcode;
+					memset(&opcode, 0, sizeof(opcode));
+					if(opcode.OPCODE != 0 || opcode.oVAL != 0 || opcode.REG1 != 0)
+						ERROR("Internal error, initial opcode not zero\'ed");
+
+					opcode.OPCODE = get_instruction_opcode(op->INSTRUCTION_NAME);
+					OPCODE_INSTRUCTION_FORMATS format = get_instruction_format(op->INSTRUCTION_NAME);
+
+					if(op->written_to_mem && memwrite == 1){
+						current_mem_ptr += vm_opcode_length[opcode.OPCODE];
+						continue;
+					}
+					if(memwrite == 1)
+						debug_printf("Pass 3 on line %s", op->raw_line.c_str());
+
+					bool can_write = false;
+
+					switch(format){
+						case _OPCODE_INVALID_FORMAT_: ERROR("Unknown instruction name"); break;
+						case OPCODE_REG_REG:
+							if(op->INSTRUCTION_ARGS.size() != 2)
+								ERROR("Invalid argument count (expected 2 register identifiers)");
+							opcode.REG1 = get_register_code(op->INSTRUCTION_ARGS[0]);
+							opcode.REG2 = get_register_code(op->INSTRUCTION_ARGS[1]);
+							if(opcode.REG1 == _VM_INVALID_REG_)
+								ERROR("Unknown register (first argument)");
+							if(opcode.REG2 == _VM_INVALID_REG_)
+								ERROR("Unknown register (second argument)");
+							can_write = true;
+						break;
+						case OPCODE_REG:
+							if(op->INSTRUCTION_ARGS.size() != 1)
+								ERROR("Invalid argument count (expected 1 register identifier)");
+							opcode.REG1 = get_register_code(op->INSTRUCTION_ARGS[0]);
+							if(opcode.REG1 == _VM_INVALID_REG_)
+								ERROR("Unknown register");
+							can_write = true;
+						break;
+						case OPCODE_VALUE_32BIT:
+							if(op->INSTRUCTION_ARGS.size() != 1)
+								ERROR("Invalid argument count (expected 1 address or etiquette)");
+							if(!argument_references_etiquette(op, 0) || memwrite == 1){
+								if(!format_numeric_value(&instructions, op, 0, opcode.VAL))
+									return false;
+								can_write = true;
+							}
+						break;
+						case OPCODE_REG_VALUE_32BIT:
+							if(op->INSTRUCTION_ARGS.size() != 2)
+								ERROR("Invalid argument count (expected a register identifier and an address, value or etiquette)");
+							opcode.REG1 = get_register_code(op->INSTRUCTION_ARGS[0]);
+							if(opcode.REG1 == _VM_INVALID_REG_)
+								ERROR("Unknown register");
+
+							if(!argument_references_etiquette(op, 1) || memwrite == 1){
+								if(!format_numeric_value(&instructions, op, 1, opcode.oVAL))
+									return false;
+								can_write = true;
+							}
+						break;
+						default:
+							ERROR("Unknown format used by this instruction, cannot compile");
+					}
+					
+					op->written_mem_addr = current_mem_ptr;
+					if(can_write){
+						mem->write_address_ext(current_mem_ptr, (uint32_t*)&opcode, ROUND_UP(sizeof(opcode), 4));
+						op->written_to_mem = true;
+						debug_cout("Written " << op->raw_line << " at mem " << op->written_mem_addr);
+					}else if(memwrite == 1){
+						ERROR("Could not compile an instruction in third pass");
+					}
+					current_mem_ptr += vm_opcode_length[opcode.OPCODE];
 				}
-
-				vm_instruction opcode;
-				memset(&opcode, 0, sizeof(opcode));
-				if(opcode.OPCODE != 0 || opcode.oVAL != 0 || opcode.REG1 != 0)
-					ERROR("Internal error, initial opcode not zero\'ed");
-
-				opcode.OPCODE = get_instruction_opcode(op->INSTRUCTION_NAME);
-				OPCODE_INSTRUCTION_FORMATS format = get_instruction_format(op->INSTRUCTION_NAME);
-
-				switch(format){
-					case _OPCODE_INVALID_FORMAT_: ERROR("Unknown instruction name"); break;
-					case OPCODE_REG_REG:
-						if(op->INSTRUCTION_ARGS.size() != 2)
-							ERROR("Invalid argument count (expected 2 register identifiers)");
-						opcode.REG1 = get_register_code(op->INSTRUCTION_ARGS[0]);
-						opcode.REG2 = get_register_code(op->INSTRUCTION_ARGS[1]);
-						if(opcode.REG1 == _VM_INVALID_REG_)
-							ERROR("Unknown register (first argument)");
-						if(opcode.REG2 == _VM_INVALID_REG_)
-							ERROR("Unknown register (second argument)");
-					break;
-					case OPCODE_REG:
-						if(op->INSTRUCTION_ARGS.size() != 1)
-							ERROR("Invalid argument count (expected 1 register identifier)");
-						opcode.REG1 = get_register_code(op->INSTRUCTION_ARGS[0]);
-						if(opcode.REG1 == _VM_INVALID_REG_)
-							ERROR("Unknown register");
-					break;
-					case OPCODE_VALUE_32BIT:
-						if(op->INSTRUCTION_ARGS.size() != 1)
-							ERROR("Invalid argument count (expected 1 address or etiquette)");
-						if(!format_numeric_value(&instructions, op, 0, opcode.VAL))
-							return false;
-					break;
-					case OPCODE_REG_VALUE_32BIT:
-						if(op->INSTRUCTION_ARGS.size() != 2)
-							ERROR("Invalid argument count (expected a register identifier and an address, value or etiquette)");
-						opcode.REG1 = get_register_code(op->INSTRUCTION_ARGS[0]);
-						if(!format_numeric_value(&instructions, op, 1, opcode.oVAL))
-							return false;
-						if(opcode.REG1 == _VM_INVALID_REG_)
-							ERROR("Unknown register");
-					break;
-					default:
-						ERROR("Unknown format used by this instruction, cannot compile");
-				}
-				
-				mem->write_address_ext(current_mem_ptr, (uint32_t*)&opcode, ROUND_UP(sizeof(opcode), 4));
-				current_mem_ptr += vm_opcode_length[opcode.OPCODE];
 			}
 
 			return true;
 			#undef ERROR
+		}
+		bool argument_references_etiquette(asm_loader_raw_instruction* op, uint16_t const& which_arg){
+			return (op->INSTRUCTION_ARGS[which_arg][0] == '@');
 		}
 
 		bool format_numeric_value(asm_loader_instruction_store * store, asm_loader_raw_instruction * op, uint16_t const& which_arg, uint32_t & dst){
@@ -359,7 +401,13 @@ class asm_loader {
 				debug_cout("Dereferencing " << op->INSTRUCTION_ARGS[which_arg]);
 				std::string et = op->INSTRUCTION_ARGS[which_arg].substr(1);
 				if(store->is_etiquette_defined(et)){
-					dst = store->get_etiquette_addr(et);
+					asm_loader_raw_instruction* ref_op = store->get_etiquette_instruction(et);
+					dst = ref_op->written_mem_addr;
+					if(!ref_op->written_to_mem){
+						errorize(op->raw_line, "ETIQUETTE SOLVER: Tried to reference an unwritten instruction (unknown addr)", op->line_num, 0);
+						return false;
+					}
+					debug_cout("Resolved addr " << dst << " (" << store->get_etiquette_instruction(et)->raw_line << ")");
 					return true;
 				}else{
 					errorize(op->raw_line, "ETIQUETTE SOLVER: Tried to use an undefined etiquette", op->line_num, 0);

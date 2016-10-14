@@ -81,6 +81,7 @@ class vm_cpu {
 					debug_printf("CPU CMOV Invalid register %u at %u", instruction->REG1, state.reg[VM_REG(VM_REG_PC)]);
 					return;
 				}
+				debug_printf("CMOV EXEC");
 				state.reg[VM_REG(instruction->REG1)] = instruction->oVAL;
 			goto finish;
 
