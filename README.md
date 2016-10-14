@@ -9,6 +9,7 @@ Machine name | Description | Status
 ---- | ---- | ----
 C | Pure C machine | On-hold (*had some issues with the old C syntax*)
 Cpp | Mixed C/C++ machine | Work-in-progress
+Java | | Planned after architecture upgrades
 
 ## Architecture
 The following description is subject to change over time. The following changes (not limited to) will be introduced over time:
