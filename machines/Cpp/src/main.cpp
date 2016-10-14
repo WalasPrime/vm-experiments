@@ -7,6 +7,7 @@
 #include "arch.h"
 #include "memory.h"
 #include "assembler_loader.h"
+#include "cpu.h"
 
 int main(){
 	if(DEBUG_MODE == 0){
@@ -28,16 +29,16 @@ int main(){
 		std::cout << asm_ldr.last_error_line_content << std::endl;
 		std::cout << std::string(asm_ldr.last_error_col, ' ') << "^" << std::endl;
 		std::cout << std::string(asm_ldr.last_error_col, ' ') << asm_ldr.last_error_line_content[asm_ldr.last_error_col] << std::endl;
-		goto fail_end;
+		return -1;
 	}else{
 		debug_printf("Program compiled succesfully");
 	}
+
+	vm_cpu exec(mem);
+	exec.execute_continuous();
 
 	debug_printf("CLEANING");
 	delete mem;
 	debug_printf("SAFE_END REACHED");
 	return 0;
-
-	fail_end:
-	return -1;
 }

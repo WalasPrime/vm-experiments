@@ -26,7 +26,9 @@ enum _vm_opcodes {
 	VM_OPCODE_JGE,
 
 	VM_OPCODE_CALL,
-	VM_OPCODE_RET
+	VM_OPCODE_RET,
+
+	_VM_OPCODE_LIMIT_
 };
 
 const uint32_t vm_opcode_length[] = {
@@ -80,6 +82,16 @@ enum _vm_registers {
 	VM_REG_R11
 };
 
+enum _vm_flags {
+	VM_FLAG_C = 1,
+	VM_FLAG_Z = 2,
+	VM_FLAG_L = 4
+};
+#define VM_2POW32_BIT (1<<31)
+
+#define VM_REG32_COUNT 18
+#define VM_REG32_ENUM_OFFSET 1
+
 #pragma pack(push, 1)
 struct _vm_instruction {
 	uint8_t OPCODE;
@@ -96,10 +108,12 @@ struct _vm_memcell {
 };
 
 struct _vm_memcell_ext {
-	struct _vm_memcell mem[2];
+	struct _vm_memcell word[2];
 };
 
 typedef _vm_instruction vm_instruction;
 typedef _vm_opcodes vm_opcodes;
 typedef _vm_memcell vm_memcell;
+typedef _vm_memcell_ext vm_memcell_ext;
 typedef _vm_registers vm_registers;
+typedef _vm_flags vm_flags;
