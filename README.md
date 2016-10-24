@@ -1,21 +1,31 @@
 # Virtual Machine Experiments [![Travis Buildstatus](https://travis-ci.org/WalasPrime/vm-experiments.svg)](https://travis-ci.org/WalasPrime/vm-experiments/)
-Very simple Virtual Machines (custom architecture) written in many languages for benchmarking purpose. A small project made to help understand the practical side of simulating a real logical computer architecture (not a physical one, we don't simulate delays on the transistors).
+Very simple Virtual Machines (custom architecture) written in many languages for benchmarking purposes. A small project made to help understand the practical side of simulating a real logical computer architecture (not a physical one, we don't simulate delays on the transistors).
 
 ## Building
 This project uses SCons 2.5.0 as it's buildsystem (which requires Python 2.7). After cloning this repo just execute the `scons` command to build all the executables.
 
-## Currently implemented machines
+## Current machines
 Machine name | Description | Status
 ---- | ---- | ----
-C | Pure C machine | On-hold (*had some issues with the old C syntax*)
+C | Pure C machine | On-hold, incomplete
 Cpp | Mixed C/C++ machine | Work-in-progress
+Cpp-ASM | Mixed C/C++/ASM (highly optimised) machine | Planned after architecture upgrades
 Java | | Planned after architecture upgrades
+
+# About the machine
+
+* [Machine architecture](#architecture)
+* [Memory](#memory)
+* [CPU registers](#cpu)
+* [Assembly](#assembly-markdown)
+* [Instructions](#instructions)
 
 ## Architecture
 The following description is subject to change over time. The following changes (not limited to) will be introduced over time:
 * Interrupt support (interrupt instructions, interrupt toggling, interrupt vector list)
 * Data section in Assembly
 * Some form of memory security that does not require memory segmenting
+* Peripherals (simple I/O)
 
 ### Memory
 Addressed with 32 bits. No segmentation is defined (the whole memory is a huge segment). Each address points at a 32 bit value. It is recommended to implement dynamic memory management in every VM (eg. divide the memory space into segments allocated at runtime if accessed). Loaded programs will be put at the begining of the memory space. The stack is also allocated in this memory (defined with an offset), the stack grows incrementaly (after using `PUSH` the stack pointer will increase).
