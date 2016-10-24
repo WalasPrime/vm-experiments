@@ -37,7 +37,7 @@ Flag register identifier | Meaning
 ---- | ----
 x | Bit without meaning
 C | Carry flag - set if the result of ADD/SUB result in overflow
-L | Less flag - set if the result of a CMP is "A < B"
+L | Less flag - set if the result is negative, or CMP result "A < B"
 Z | Zero flag - set if the result of the last operation is zero (or A = B in case of CMP)
 
 
@@ -74,11 +74,11 @@ MOV | MOV REG1 REG2 | REG1 = REG2 | Z
 CMOV | CMOV REG VAL | REG = VAL | Z
 ADD | ADD REG1 REG2 | ACC = REG1 + REG2 | CZ
 ADC | ADC REG1 REG2 | ACC = REG1 + REG2 + (FLAGS[C] ? 1 : 0) | CZ
-SUB | SUB REG1 REG2 | ACC = REG1 - REG2 | CZ
-SBC | SBC REG1 REG2 | ACC = REG1 - REG2 - (FLAGS[C] ? 1 : 0) | CZ
+SUB | SUB REG1 REG2 | ACC = REG1 - REG2 | CZL
+SBC | SBC REG1 REG2 | ACC = REG1 - REG2 - (FLAGS[C] ? 1 : 0) | CZL
 CLF | | FLAGS=0 | Clear flags
-LOAD | LOAD VAL | ACC = [DS:VAL] | Load a 32 bit value from the memory, addressed with DS + VAL
-SAVE | SAVE REG | [DS:VAL] = REG | Save a 32 bit value from any register to address DS + VAL
+LOAD | LOAD REG VAL | REG = [DS:VAL] | Load a 32 bit value from the memory, addressed with DS + VAL, into any register
+SAVE | SAVE REG VAL | [DS:VAL] = REG | Save a 32 bit value from any register to address DS + VAL
 CMP | CMP REG1 REG2 | Compare two register values, result is saved within flags | LZ
 JMP | JMP VAL | | Jump to the target instruction number
 JE | JE VAL | | Jump to the target instruction number (if Z flag is up)

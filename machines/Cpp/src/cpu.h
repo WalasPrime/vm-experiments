@@ -61,7 +61,22 @@ class vm_cpu {
 				case VM_OPCODE_MOV: goto OP_MOV; break;
 				case VM_OPCODE_CMOV: goto OP_CMOV; break;
 				case VM_OPCODE_ADD: goto OP_ADD; break;
+				case VM_OPCODE_ADC: goto OP_ADC; break;
+				case VM_OPCODE_SUB: goto OP_SUB; break;
+				// TODO: case VM_OPCODE_SBC: goto OP_SBC; break;
 
+				case VM_OPCODE_CLF: goto OP_CLF; break;
+				case VM_OPCODE_CMP: goto OP_CMP; break;
+
+				case VM_OPCODE_LOAD: goto OP_LOAD; break;
+				case VM_OPCODE_SAVE: goto OP_SAVE; break;
+
+				case VM_OPCODE_JE: goto OP_JE; break;
+				case VM_OPCODE_JNE: goto OP_JNE; break;
+				case VM_OPCODE_JL: goto OP_JL; break;
+				case VM_OPCODE_JLE: goto OP_JLE; break;
+				case VM_OPCODE_JG: goto OP_JG; break;
+				case VM_OPCODE_JGE: goto OP_JGE; break;
 				case VM_OPCODE_JMP: goto OP_JMP; break;
 				default:
 					debug_printf("CPU Encountered an unimplemented instruction %u at %u", instruction->OPCODE, state.reg[VM_REG(VM_REG_PC)]);
@@ -74,6 +89,11 @@ class vm_cpu {
 					return;
 				}
 				state.reg[VM_REG(instruction->REG1)] = state.reg[VM_REG(instruction->REG2)];
+				if(state.reg[VM_REG(instruction->REG1)] == 0){
+					state.reg[VM_REG(VM_REG_FLAGS)] |= VM_FLAG_Z;
+				}else{
+					state.reg[VM_REG(VM_REG_FLAGS)] &= ~VM_FLAG_Z;
+				}
 			goto finish;
 
 			OP_CMOV:
@@ -82,6 +102,11 @@ class vm_cpu {
 					return;
 				}
 				state.reg[VM_REG(instruction->REG1)] = instruction->oVAL;
+				if(state.reg[VM_REG(instruction->REG1)] == 0){
+					state.reg[VM_REG(VM_REG_FLAGS)] |= VM_FLAG_Z;
+				}else{
+					state.reg[VM_REG(VM_REG_FLAGS)] &= ~VM_FLAG_Z;
+				}
 			goto finish;
 
 			OP_ADD:
@@ -91,14 +116,129 @@ class vm_cpu {
 				}
 				state.reg[VM_REG(VM_REG_ACC)] = state.reg[VM_REG(instruction->REG1)] + state.reg[VM_REG(instruction->REG2)];
 				if(state.reg[VM_REG(instruction->REG1)] & VM_2POW32_BIT && state.reg[VM_REG(instruction->REG2)] & VM_2POW32_BIT){
-					state.reg[VM_REG(VM_REG_FLAGS)] &= VM_FLAG_C;
+					state.reg[VM_REG(VM_REG_FLAGS)] |= VM_FLAG_C;
 				}else{
 					state.reg[VM_REG(VM_REG_FLAGS)] &= ~VM_FLAG_C;
 				}
+				if(state.reg[VM_REG(VM_REG_ACC)] == 0){
+					state.reg[VM_REG(VM_REG_FLAGS)] |= VM_FLAG_Z;
+				}else{
+					state.reg[VM_REG(VM_REG_FLAGS)] &= ~VM_FLAG_Z;
+				}
+			goto finish;
+
+			OP_ADC:
+				if(instruction->REG1 == 0 || instruction->REG2 == 0 || instruction->REG1 > VM_REG32_COUNT-1 || instruction->REG2 > VM_REG32_COUNT-1){
+					debug_printf("CPU ADC Invalid register argument at %u", state.reg[VM_REG(VM_REG_PC)]);
+					return;
+				}
+				// FIXME: Nasty ADD copypasta
+				state.reg[VM_REG(VM_REG_ACC)] = state.reg[VM_REG(instruction->REG1)] + state.reg[VM_REG(instruction->REG2)] + (state.reg[VM_REG(VM_REG_FLAGS)] & VM_FLAG_C);
+				if(state.reg[VM_REG(instruction->REG1)] & VM_2POW32_BIT && state.reg[VM_REG(instruction->REG2)] & VM_2POW32_BIT){
+					state.reg[VM_REG(VM_REG_FLAGS)] |= VM_FLAG_C;
+				}else{
+					state.reg[VM_REG(VM_REG_FLAGS)] &= ~VM_FLAG_C;
+				}
+				if(state.reg[VM_REG(VM_REG_ACC)] == 0){
+					state.reg[VM_REG(VM_REG_FLAGS)] |= VM_FLAG_Z;
+				}else{
+					state.reg[VM_REG(VM_REG_FLAGS)] &= ~VM_FLAG_Z;
+				}
+			goto finish;
+
+			OP_SUB:
+				if(instruction->REG1 == 0 || instruction->REG2 == 0 || instruction->REG1 > VM_REG32_COUNT-1 || instruction->REG2 > VM_REG32_COUNT-1){
+					debug_printf("CPU SUB Invalid register argument at %u", state.reg[VM_REG(VM_REG_PC)]);
+					return;
+				}
+				state.reg[VM_REG(VM_REG_ACC)] = (uint32_t)((int32_t)state.reg[VM_REG(instruction->REG1)] - (int32_t)state.reg[VM_REG(instruction->REG2)]);
+				// TODO: Overflow flags
+				// TODO: Carry flag
+				// FIXME: ADD copypasta
+				if(state.reg[VM_REG(VM_REG_ACC)] == 0){
+					state.reg[VM_REG(VM_REG_FLAGS)] |= VM_FLAG_Z;
+				}else{
+					state.reg[VM_REG(VM_REG_FLAGS)] &= ~VM_FLAG_Z;
+				}
+			goto finish;
+
+			/*
+			OP_SBC:
+
+			goto finish;
+			*/
+
+			OP_CLF:
+				state.reg[VM_REG(VM_REG_FLAGS)] = 0;
+			goto finish;
+
+			OP_CMP:
+				if(instruction->REG1 == 0 || instruction->REG2 == 0 || instruction->REG1 > VM_REG32_COUNT-1 || instruction->REG2 > VM_REG32_COUNT-1){
+					debug_printf("CPU CMP Invalid register argument at %u", state.reg[VM_REG(VM_REG_PC)]);
+					return;
+				}
+				state.reg[VM_REG(VM_REG_FLAGS)] &= ~(VM_FLAG_L | VM_FLAG_Z);
+				if(state.reg[VM_REG(instruction->REG1)] < state.reg[VM_REG(instruction->REG2)]){
+					state.reg[VM_REG(VM_REG_FLAGS)] |= VM_FLAG_L;
+				}
+				if(state.reg[VM_REG(instruction->REG1)] == state.reg[VM_REG(instruction->REG2)]){
+					state.reg[VM_REG(VM_REG_FLAGS)] |= VM_FLAG_Z;
+				}
+			goto finish;
+
+			OP_LOAD:
+				if(instruction->REG1 == 0 || instruction->REG1 > VM_REG32_COUNT-1){
+					debug_printf("CPU LOAD Invalid register argument at %u", state.reg[VM_REG(VM_REG_PC)]);
+					return;
+				}
+				if(!mem->read_address(instruction->VAL, state.reg[VM_REG(instruction->REG1)])){
+					debug_printf("CPU LOAD failed reading address %u at %u", instruction->VAL, state.reg[VM_REG(VM_REG_PC)]);
+					return;
+				}
+			goto finish;
+
+			OP_SAVE:
+				if(instruction->REG1 == 0 || instruction->REG1 > VM_REG32_COUNT-1){
+					debug_printf("CPU SAVE Invalid register argument at %u", instruction->REG1);
+					return;
+				}
+				if(!mem->write_address(instruction->VAL, state.reg[VM_REG(instruction->REG1)])){
+					debug_printf("CPU SAVE failed writing address %u at %u", instruction->VAL, state.reg[VM_REG(VM_REG_PC)]);
+					return;
+				}
+			goto finish;
+
+			OP_JE:
+				if(state.reg[VM_REG(VM_REG_PC)] & VM_FLAG_Z != 0)
+					goto OP_JMP;
+			goto finish;
+
+			OP_JNE:
+				if(state.reg[VM_REG(VM_REG_PC)] & VM_FLAG_Z == 0)
+					goto OP_JMP;
+			goto finish;
+
+			OP_JL:
+				if(state.reg[VM_REG(VM_REG_PC)] & VM_FLAG_L != 0)
+					goto OP_JMP;
+			goto finish;
+
+			OP_JLE:
+				if(state.reg[VM_REG(VM_REG_PC)] & (VM_FLAG_L | VM_FLAG_Z) != 0)
+					goto OP_JMP;
+			goto finish;
+
+			OP_JG:
+				if(state.reg[VM_REG(VM_REG_PC)] & (VM_FLAG_L | VM_FLAG_Z) == 0)
+					goto OP_JMP;
+			goto finish;
+
+			OP_JGE:
+				if(state.reg[VM_REG(VM_REG_PC)] & (VM_FLAG_L) == 0)
+					goto OP_JMP;
 			goto finish;
 
 			OP_JMP:
-				// FIXME: Jumps are compiled the wrong way at the moment
 				debug_printf("CPU JMP at %u to %u", state.reg[VM_REG(VM_REG_PC)], instruction->VAL);
 				state.reg[VM_REG(VM_REG_PC)] = instruction->VAL;
 			goto fetch;
