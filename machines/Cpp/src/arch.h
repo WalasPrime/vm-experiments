@@ -17,16 +17,17 @@ enum _vm_opcodes {
 	VM_OPCODE_LOAD,
 	VM_OPCODE_SAVE,
 
-	VM_OPCODE_JMP,
 	VM_OPCODE_JE,
 	VM_OPCODE_JNE,
 	VM_OPCODE_JL,
 	VM_OPCODE_JLE,
 	VM_OPCODE_JG,
 	VM_OPCODE_JGE,
+	VM_OPCODE_JMP,
 
 	VM_OPCODE_CALL,
 	VM_OPCODE_RET,
+	VM_OPCODE_BREAK,
 
 	_VM_OPCODE_LIMIT_
 };
@@ -47,16 +48,17 @@ const uint32_t vm_opcode_length[] = {
 	2, // VM_OPCODE_LOAD
 	2, // VM_OPCODE_SAVE
 
-	2, // VM_OPCODE_JMP
 	2, // VM_OPCODE_JE
 	2, // VM_OPCODE_JNE
 	2, // VM_OPCODE_JL
 	2, // VM_OPCODE_JLE
 	2, // VM_OPCODE_JG
 	2, // VM_OPCODE_JGE
+	2, // VM_OPCODE_JMP
 
 	2, // VM_OPCODE_CALL
-	1  // VM_OPCODE_RET
+	1,  // VM_OPCODE_RET
+	1 // VM_OPCODE_BREAK
 };
 
 enum _vm_registers {

@@ -16,4 +16,4 @@ _start:
 	jmp @my_func
 	
 f_check:
-	#jmp @_start
+	break

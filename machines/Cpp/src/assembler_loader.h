@@ -135,6 +135,7 @@ class asm_loader {
 			add_op_dict("JGE", OPCODE_VALUE_32BIT, VM_OPCODE_JGE);
 			add_op_dict("CALL", OPCODE_VALUE_32BIT, VM_OPCODE_CALL);
 			add_op_dict("RET", OPCODE_NO_ARGUMENTS, VM_OPCODE_RET);
+			add_op_dict("BREAK", OPCODE_NO_ARGUMENTS, VM_OPCODE_BREAK);
 
 			add_reg_dict("PC", VM_REG_PC);
 			add_reg_dict("FLAGS", VM_REG_FLAGS);
@@ -373,6 +374,7 @@ class asm_loader {
 								can_write = true;
 							}
 						break;
+						case OPCODE_NO_ARGUMENTS: can_write = true; break;
 						default:
 							ERROR("Unknown format used by this instruction, cannot compile");
 					}

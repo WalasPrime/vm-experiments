@@ -2,6 +2,7 @@
 #define CONCAT(A,B) A B
 #define ROUND_UP(N, S) ((((N) + (S) - 1) / (S)) * (S))
 
+#include <cstring>
 #include <stdio.h>
 #include <string>
 #include <iostream>
