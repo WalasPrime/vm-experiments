@@ -4,6 +4,8 @@
 #include "memory.h"
 
 #define VM_REG(VM_REGISTERS_NUM) (VM_REGISTERS_NUM-VM_REG32_ENUM_OFFSET)
+#define REG_VARIANT_OP_CHECK(instruction) if(instruction->REG1 == 0 || instruction->REG1 > VM_REG32_COUNT-1 || ((instruction->OPTS & VM_OPT_VARIANT_REG) && (instruction->REG2 == 0 || instruction->REG2 > VM_REG32_COUNT-1)))
+#define REG_OP_CHECK(reg) if(reg == 0 || reg > VM_REG32_COUNT-1)
 
 struct _vm_cpu_state {
 	// All 32 bit registers
@@ -59,7 +61,7 @@ class vm_cpu {
 
 			switch(instruction->OPCODE){
 				case VM_OPCODE_MOV: goto OP_MOV; break;
-				case VM_OPCODE_CMOV: goto OP_CMOV; break;
+				//case VM_OPCODE_CMOV: goto OP_CMOV; break;
 				case VM_OPCODE_ADD: goto OP_ADD; break;
 				case VM_OPCODE_ADC: goto OP_ADC; break;
 				case VM_OPCODE_SUB: goto OP_SUB; break;
@@ -90,11 +92,14 @@ class vm_cpu {
 			}
 
 			OP_MOV:
-				if(instruction->REG1 == 0 || instruction->REG2 == 0 || instruction->REG1 > VM_REG32_COUNT-1 || instruction->REG2 > VM_REG32_COUNT-1){
+				REG_VARIANT_OP_CHECK(instruction){
 					debug_printf("CPU MOV Invalid register argument at %u", state.reg[VM_REG(VM_REG_PC)]);
 					return;
 				}
-				state.reg[VM_REG(instruction->REG1)] = state.reg[VM_REG(instruction->REG2)];
+				state.reg[VM_REG(instruction->REG1)] = instruction->oVAL;
+				if(instruction->OPTS & VM_OPT_VARIANT_REG)
+					state.reg[VM_REG(instruction->REG1)] = state.reg[VM_REG(instruction->REG2)];
+
 				if(state.reg[VM_REG(instruction->REG1)] == 0){
 					state.reg[VM_REG(VM_REG_FLAGS)] |= VM_FLAG_Z;
 				}else{
@@ -102,7 +107,7 @@ class vm_cpu {
 				}
 			goto finish;
 
-			OP_CMOV:
+			/*OP_CMOV:
 				if(instruction->REG1 == 0 || instruction->REG1 > VM_REG32_COUNT-1){
 					debug_printf("CPU CMOV Invalid register %u at %u", instruction->REG1, state.reg[VM_REG(VM_REG_PC)]);
 					return;
@@ -113,10 +118,10 @@ class vm_cpu {
 				}else{
 					state.reg[VM_REG(VM_REG_FLAGS)] &= ~VM_FLAG_Z;
 				}
-			goto finish;
+			goto finish;*/
 
 			OP_ADD:
-				if(instruction->REG1 == 0 || instruction->REG2 == 0 || instruction->REG1 > VM_REG32_COUNT-1 || instruction->REG2 > VM_REG32_COUNT-1){
+				REG_VARIANT_OP_CHECK(instruction){
 					debug_printf("CPU ADD Invalid register argument at %u", state.reg[VM_REG(VM_REG_PC)]);
 					return;
 				}
@@ -134,7 +139,7 @@ class vm_cpu {
 			goto finish;
 
 			OP_ADC:
-				if(instruction->REG1 == 0 || instruction->REG2 == 0 || instruction->REG1 > VM_REG32_COUNT-1 || instruction->REG2 > VM_REG32_COUNT-1){
+				REG_VARIANT_OP_CHECK(instruction){
 					debug_printf("CPU ADC Invalid register argument at %u", state.reg[VM_REG(VM_REG_PC)]);
 					return;
 				}
@@ -153,7 +158,7 @@ class vm_cpu {
 			goto finish;
 
 			OP_SUB:
-				if(instruction->REG1 == 0 || instruction->REG2 == 0 || instruction->REG1 > VM_REG32_COUNT-1 || instruction->REG2 > VM_REG32_COUNT-1){
+				REG_VARIANT_OP_CHECK(instruction){
 					debug_printf("CPU SUB Invalid register argument at %u", state.reg[VM_REG(VM_REG_PC)]);
 					return;
 				}
@@ -179,7 +184,7 @@ class vm_cpu {
 			goto finish;
 
 			OP_CMP:
-				if(instruction->REG1 == 0 || instruction->REG2 == 0 || instruction->REG1 > VM_REG32_COUNT-1 || instruction->REG2 > VM_REG32_COUNT-1){
+				REG_VARIANT_OP_CHECK(instruction){
 					debug_printf("CPU CMP Invalid register argument at %u", state.reg[VM_REG(VM_REG_PC)]);
 					return;
 				}
@@ -193,7 +198,7 @@ class vm_cpu {
 			goto finish;
 
 			OP_LOAD:
-				if(instruction->REG1 == 0 || instruction->REG1 > VM_REG32_COUNT-1){
+				REG_VARIANT_OP_CHECK(instruction){
 					debug_printf("CPU LOAD Invalid register argument at %u", state.reg[VM_REG(VM_REG_PC)]);
 					return;
 				}
@@ -204,7 +209,7 @@ class vm_cpu {
 			goto finish;
 
 			OP_SAVE:
-				if(instruction->REG1 == 0 || instruction->REG1 > VM_REG32_COUNT-1){
+				REG_VARIANT_OP_CHECK(instruction){
 					debug_printf("CPU SAVE Invalid register argument at %u", instruction->REG1);
 					return;
 				}
@@ -245,11 +250,19 @@ class vm_cpu {
 			goto finish;
 
 			OP_JMP:
-				state.reg[VM_REG(VM_REG_PC)] = instruction->VAL;
+				state.reg[VM_REG(VM_REG_PC)] = instruction->oVAL;
+				if(instruction->OPTS & VM_OPT_VARIANT_REG){
+					if(REG_OP_CHECK(instruction->REG2)){
+						state.reg[VM_REG(VM_REG_PC)] = instruction->REG2;
+					}else{
+						debug_printf("CPU JMP Invalid register at %u", state.reg[VM_REG(VM_REG_PC)]);
+						return;
+					}
+				}
 			goto fetch;
 
 			OP_PUSH:
-				if(instruction->REG1 == 0 || instruction->REG1 > VM_REG32_COUNT-1){
+				REG_OP_CHECK(instruction->REG1){
 					debug_printf("CPU PUSH Invalid register at %u", state.reg[VM_REG(VM_REG_PC)]);
 					return;
 				}
@@ -262,7 +275,7 @@ class vm_cpu {
 			goto fetch;
 
 			OP_POP:
-				if(instruction->REG1 == 0 || instruction->REG1 > VM_REG32_COUNT-1){
+				REG_OP_CHECK(instruction->REG1){
 					debug_printf("CPU POP Invalid register at %u", state.reg[VM_REG(VM_REG_PC)]);
 					return;
 				}
@@ -293,7 +306,7 @@ class vm_cpu {
 					debug_printf("CPU RET failed, stack pointer zero at %u", state.reg[VM_REG(VM_REG_PC)]);
 					return;
 				}
-				if(!mem->read_address(state.reg[VM_REG(VM_REG_SS)]+state.reg[VM_REG(VM_REG_SP)], instruction->VAL)){
+				if(!mem->read_address(state.reg[VM_REG(VM_REG_SS)]+state.reg[VM_REG(VM_REG_SP)], instruction->oVAL)){
 					debug_printf("CPU RET failed reading stack entry %u at %u", state.reg[VM_REG(VM_REG_SS)]+state.reg[VM_REG(VM_REG_SP)], state.reg[VM_REG(VM_REG_PC)]);
 					return;
 				}

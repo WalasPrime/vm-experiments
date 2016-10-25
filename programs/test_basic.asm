@@ -1,8 +1,8 @@
 # Comment
-	cmov r0 1
-	cmov r1 2
-	cmov r2 3
-	cmov r3 4
+	mov r0 1
+	mov r1 2
+	mov r2 3
+	mov r3 4
 jmp @_start
 
 my_func: # Comment
@@ -11,8 +11,8 @@ my_func: # Comment
 	jmp @f_check
 
 _start:
-	cmov r0 5
-	cmov r1 10
+	mov r0 5
+	mov r1 10
 	jmp @my_func
 	
 f_check:

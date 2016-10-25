@@ -1,7 +1,7 @@
 # A simple test script that counts to 10
 
-    CMOV R0 0
-    CMOV R10 1024   # Address
+    MOV R0 0
+    MOV R10 1024   # Address
 counter:
     ADD R0 1
     MOV R0 ACC

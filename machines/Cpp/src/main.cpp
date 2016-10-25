@@ -3,7 +3,7 @@
 //	- No special optimisations should be used here
 //	- This is the "it just works" machine
 
-#include <ofstream>
+#include <fstream>
 
 #include "util.h"
 #include "arch.h"
@@ -55,15 +55,15 @@ int main(int argc, char* argv[]){
 	if(!ARG_DUMP_PATH.empty()){
 		debug_printf("Generating a memory dump file");
 		std::ofstream dump (ARG_DUMP_PATH, std::ofstream::binary);
-		dump.write(&ARG_DUMP_OFFSET, sizeof(ARG_DUMP_OFFSET));
-		dump.write(&ARG_DUMP_LENGTH, sizeof(ARG_DUMP_LENGTH));
+		dump.write((char*)&ARG_DUMP_OFFSET, sizeof(ARG_DUMP_OFFSET));
+		dump.write((char*)&ARG_DUMP_LENGTH, sizeof(ARG_DUMP_LENGTH));
 		uint32_t temp;
 		for(uint32_t at = ARG_DUMP_OFFSET; at < ARG_DUMP_OFFSET+ARG_DUMP_LENGTH; at++){
 			if(!mem->read_address(at, temp)){
 				printf("Error while generating a memory dump at mem %u\n", at);
 				break;
 			}
-			dump.write(&temp, sizeof(temp));
+			dump.write((char*)&temp, sizeof(temp));
 		}
 		debug_printf("Finished generating a dump file, closing");
 		dump.close();

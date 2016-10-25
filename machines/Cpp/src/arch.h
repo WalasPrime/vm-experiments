@@ -5,7 +5,7 @@ enum _vm_opcodes {
 	_VM_INVALID_OPCODE_ = 0,
 
 	VM_OPCODE_MOV,
-	VM_OPCODE_CMOV,
+	//VM_OPCODE_CMOV,
 	VM_OPCODE_ADD,
 	VM_OPCODE_ADC,
 	VM_OPCODE_SUB,
@@ -38,7 +38,7 @@ const uint32_t vm_opcode_length[] = {
 	0, // _VM_INVALID_OPCODE_
 
 	1, // VM_OPCODE_MOV
-	2, // VM_OPCODE_CMOV
+	//2, // VM_OPCODE_CMOV
 	1, // VM_OPCODE_ADD
 	1, // VM_OPCODE_ADC
 	1, // VM_OPCODE_SUB
@@ -93,6 +93,10 @@ enum _vm_flags {
 	VM_FLAG_Z = 2,
 	VM_FLAG_L = 4
 };
+
+enum _vm_opts {
+	VM_OPT_VARIANT_REG = 1 // up if variant is REG2 rather than oVAL
+};
 #define VM_2POW32_BIT (1<<31)
 
 #define VM_REG32_COUNT 18
@@ -101,6 +105,7 @@ enum _vm_flags {
 #pragma pack(push, 1)
 struct _vm_instruction {
 	uint8_t OPCODE;
+	uint8_t OPTS;
 	union {
 		struct {uint8_t REG1; uint8_t REG2;};
 		struct {uint8_t __unused1; uint32_t oVAL;}; // offsetValue

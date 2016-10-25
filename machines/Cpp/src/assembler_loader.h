@@ -81,7 +81,9 @@ class asm_loader {
 			OPCODE_VALUE_32BIT,
 			OPCODE_REG,
 			OPCODE_REG_VALUE_32BIT,
-			OPCODE_REG_REG
+			OPCODE_REG_REG,
+			OPCODE_REG_VARIANT,
+			OPCODE_VARIANT
 		};
 		typedef struct _opcode_dictionary {
 			std::string identifier;
@@ -116,26 +118,26 @@ class asm_loader {
 			last_error_line = 0;
 			last_error_col = 0;
 
-			add_op_dict("MOV", OPCODE_REG_REG, VM_OPCODE_MOV);
-			add_op_dict("CMOV", OPCODE_REG_VALUE_32BIT, VM_OPCODE_CMOV);
-			add_op_dict("ADD", OPCODE_REG_REG, VM_OPCODE_ADD);
-			add_op_dict("ADC", OPCODE_REG_REG, VM_OPCODE_ADC);
-			add_op_dict("SUB", OPCODE_REG_REG, VM_OPCODE_SUB);
-			add_op_dict("SBC", OPCODE_REG_REG, VM_OPCODE_SBC);
+			add_op_dict("MOV", OPCODE_REG_VARIANT, VM_OPCODE_MOV);
+			//add_op_dict("CMOV", OPCODE_REG_VALUE_32BIT, VM_OPCODE_CMOV);
+			add_op_dict("ADD", OPCODE_REG_VARIANT, VM_OPCODE_ADD);
+			add_op_dict("ADC", OPCODE_REG_VARIANT, VM_OPCODE_ADC);
+			add_op_dict("SUB", OPCODE_REG_VARIANT, VM_OPCODE_SUB);
+			add_op_dict("SBC", OPCODE_REG_VARIANT, VM_OPCODE_SBC);
 			add_op_dict("CLF", OPCODE_NO_ARGUMENTS, VM_OPCODE_CLF);
-			add_op_dict("LOAD", OPCODE_VALUE_32BIT, VM_OPCODE_LOAD);
-			add_op_dict("SAVE", OPCODE_REG, VM_OPCODE_SAVE);
-			add_op_dict("CMP", OPCODE_REG_REG, VM_OPCODE_CMP);
-			add_op_dict("JMP", OPCODE_VALUE_32BIT, VM_OPCODE_JMP);
-			add_op_dict("JE", OPCODE_VALUE_32BIT, VM_OPCODE_JE);
-			add_op_dict("JNE", OPCODE_VALUE_32BIT, VM_OPCODE_JNE);
-			add_op_dict("JL", OPCODE_VALUE_32BIT, VM_OPCODE_JL);
-			add_op_dict("JLE", OPCODE_VALUE_32BIT, VM_OPCODE_JLE);
-			add_op_dict("JG", OPCODE_VALUE_32BIT, VM_OPCODE_JG);
-			add_op_dict("JGE", OPCODE_VALUE_32BIT, VM_OPCODE_JGE);
+			add_op_dict("LOAD", OPCODE_REG_VARIANT, VM_OPCODE_LOAD);
+			add_op_dict("SAVE", OPCODE_REG_VARIANT, VM_OPCODE_SAVE);
+			add_op_dict("CMP", OPCODE_REG_VARIANT, VM_OPCODE_CMP);
+			add_op_dict("JMP", OPCODE_VARIANT, VM_OPCODE_JMP);
+			add_op_dict("JE", OPCODE_VARIANT, VM_OPCODE_JE);
+			add_op_dict("JNE", OPCODE_VARIANT, VM_OPCODE_JNE);
+			add_op_dict("JL", OPCODE_VARIANT, VM_OPCODE_JL);
+			add_op_dict("JLE", OPCODE_VARIANT, VM_OPCODE_JLE);
+			add_op_dict("JG", OPCODE_VARIANT, VM_OPCODE_JG);
+			add_op_dict("JGE", OPCODE_VARIANT, VM_OPCODE_JGE);
 			add_op_dict("PUSH", OPCODE_REG, VM_OPCODE_PUSH);
 			add_op_dict("POP", OPCODE_REG, VM_OPCODE_POP);
-			add_op_dict("CALL", OPCODE_VALUE_32BIT, VM_OPCODE_CALL);
+			add_op_dict("CALL", OPCODE_VARIANT, VM_OPCODE_CALL);
 			add_op_dict("RET", OPCODE_NO_ARGUMENTS, VM_OPCODE_RET);
 			add_op_dict("BREAK", OPCODE_NO_ARGUMENTS, VM_OPCODE_BREAK);
 
@@ -344,6 +346,7 @@ class asm_loader {
 								ERROR("Unknown register (first argument)");
 							if(opcode.REG2 == _VM_INVALID_REG_)
 								ERROR("Unknown register (second argument)");
+								// TODO: Use Variant
 							can_write = true;
 						break;
 						case OPCODE_REG:
@@ -357,6 +360,7 @@ class asm_loader {
 						case OPCODE_VALUE_32BIT:
 							if(op->INSTRUCTION_ARGS.size() != 1)
 								ERROR("Invalid argument count (expected 1 address or etiquette)");
+							// TODO: Try Variant first
 							if(!argument_references_etiquette(op, 0) || memwrite == 1){
 								if(!format_numeric_value(&instructions, op, 0, opcode.VAL))
 									return false;
@@ -374,6 +378,40 @@ class asm_loader {
 								if(!format_numeric_value(&instructions, op, 1, opcode.oVAL))
 									return false;
 								can_write = true;
+							}
+						break;
+						case OPCODE_VARIANT:
+							if(op->INSTRUCTION_ARGS.size() != 1)
+								ERROR("Invalid argument count (expected a variant register identifier, an address, value or etiquette)");
+							opcode.REG2 = get_register_code(op->INSTRUCTION_ARGS[0]);
+							if(opcode.REG2 == _VM_INVALID_REG_){
+								if(!argument_references_etiquette(op, 1) || memwrite == 1){
+									if(!format_numeric_value(&instructions, op, 1, opcode.oVAL))
+										return false;
+									can_write = true;
+								}
+							}else{
+								can_write = true;
+								opcode.OPTS |= VM_OPT_VARIANT_REG;
+							}
+						break;
+						case OPCODE_REG_VARIANT:
+							if(op->INSTRUCTION_ARGS.size() != 2)
+								ERROR("Invalid argument count (expected a registry identifier and a variant register identifier, an address, value or etiquette)");
+							opcode.REG1 = get_register_code(op->INSTRUCTION_ARGS[0]);
+							if(opcode.REG1 == _VM_INVALID_REG_)
+								ERROR("Unknown register");
+							
+							opcode.REG2 = get_register_code(op->INSTRUCTION_ARGS[1]);
+							if(opcode.REG2 == _VM_INVALID_REG_){
+								if(!argument_references_etiquette(op, 2) || memwrite == 1){
+									if(!format_numeric_value(&instructions, op, 2, opcode.oVAL))
+										return false;
+									can_write = true;
+								}
+							}else{
+								can_write = true;
+								opcode.OPTS |= VM_OPT_VARIANT_REG;
 							}
 						break;
 						case OPCODE_NO_ARGUMENTS: can_write = true; break;
