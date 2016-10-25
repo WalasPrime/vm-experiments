@@ -11,5 +11,4 @@ before_script:
   - if [ "$DEBUG_MODE" = "1" ]; then export DEBUG_SUFFIX=_debug; fi
 script:
   - scons DEBUG=$DEBUG_MODE
-  - ./machines/Cpp/bin/c_machine$DEBUG_SUFFIX
   - python scripts/testsuite/test_programs.py DEBUG=$DEBUG_MODE
