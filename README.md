@@ -97,6 +97,8 @@ JL | JL VAL | | Jump to the target instruction number (if L flag is up)
 JLE | JLE VAL | | Jump to the target instruction number (if L or Z flag is up)
 JG | JG VAL | | Jump to the target instruction number (if L and Z flags are down)
 JGE | JGE VAL | | Jump to the target instruction number (if L flag is down)
+PUSH | PUSH REG | [SS:SP] = REG; SP++ | Push a register value to the stack
+POP | POP REG | REG = [SS:SP]; SP-- | Pop a value into a register from the stack
 CALL | CALL VAL | | Push the current instruction number onto the stack then jump to the target instruction number (procedures and functions)
 RET | RET | | Pop an address from the stack then jump to it (end of procedures and functions)
 BREAK | BREAK | | Forcefully stop VM execution (breakpoint)

@@ -133,6 +133,8 @@ class asm_loader {
 			add_op_dict("JLE", OPCODE_VALUE_32BIT, VM_OPCODE_JLE);
 			add_op_dict("JG", OPCODE_VALUE_32BIT, VM_OPCODE_JG);
 			add_op_dict("JGE", OPCODE_VALUE_32BIT, VM_OPCODE_JGE);
+			add_op_dict("PUSH", OPCODE_REG, VM_OPCODE_PUSH);
+			add_op_dict("POP", OPCODE_REG, VM_OPCODE_POP);
 			add_op_dict("CALL", OPCODE_VALUE_32BIT, VM_OPCODE_CALL);
 			add_op_dict("RET", OPCODE_NO_ARGUMENTS, VM_OPCODE_RET);
 			add_op_dict("BREAK", OPCODE_NO_ARGUMENTS, VM_OPCODE_BREAK);

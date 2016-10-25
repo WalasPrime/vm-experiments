@@ -78,6 +78,12 @@ class vm_cpu {
 				case VM_OPCODE_JG: goto OP_JG; break;
 				case VM_OPCODE_JGE: goto OP_JGE; break;
 				case VM_OPCODE_JMP: goto OP_JMP; break;
+
+				case VM_OPCODE_PUSH: goto OP_PUSH; break;
+				case VM_OPCODE_POP: goto OP_POP; break;
+				case VM_OPCODE_CALL: goto OP_CALL; break;
+				case VM_OPCODE_RET: goto OP_RET; break;
+				// TODO: BREAK
 				default:
 					debug_printf("CPU Encountered an unimplemented instruction %u at %u", instruction->OPCODE, state.reg[VM_REG(VM_REG_PC)]);
 					goto finish;
@@ -239,9 +245,60 @@ class vm_cpu {
 			goto finish;
 
 			OP_JMP:
-				debug_printf("CPU JMP at %u to %u", state.reg[VM_REG(VM_REG_PC)], instruction->VAL);
 				state.reg[VM_REG(VM_REG_PC)] = instruction->VAL;
 			goto fetch;
+
+			OP_PUSH:
+				if(instruction->REG1 == 0 || instruction->REG1 > VM_REG32_COUNT-1){
+					debug_printf("CPU PUSH Invalid register at %u", state.reg[VM_REG(VM_REG_PC)]);
+					return;
+				}
+				// FIXME: OP_CALL copypasta
+				if(!mem->write_address(state.reg[VM_REG(instruction->REG1)], state.reg[VM_REG(VM_REG_SP)]+state.reg[VM_REG(VM_REG_SS)])){
+					debug_printf("CPU PUSH failed pushing registry to address %u at %u", state.reg[VM_REG(VM_REG_SP)]+state.reg[VM_REG(VM_REG_SS)], state.reg[VM_REG(VM_REG_PC)]);
+					return;
+				}
+				state.reg[VM_REG(VM_REG_SP)]++;
+			goto fetch;
+
+			OP_POP:
+				if(instruction->REG1 == 0 || instruction->REG1 > VM_REG32_COUNT-1){
+					debug_printf("CPU POP Invalid register at %u", state.reg[VM_REG(VM_REG_PC)]);
+					return;
+				}
+				// FIXME: OP_RET copypasta
+				if(state.reg[VM_REG(VM_REG_SP)] == 0){
+					debug_printf("CPU POP failed, stack pointer zero at %u", state.reg[VM_REG(VM_REG_PC)]);
+					return;
+				}
+				if(!mem->read_address(state.reg[VM_REG(instruction->REG1)]+state.reg[VM_REG(VM_REG_SP)], instruction->VAL)){
+					debug_printf("CPU POP failed reading stack entry %u at %u", state.reg[VM_REG(VM_REG_SS)]+state.reg[VM_REG(VM_REG_SP)], state.reg[VM_REG(VM_REG_PC)]);
+					return;
+				}
+				state.reg[VM_REG(VM_REG_SP)]--;
+			goto fetch;
+
+			OP_CALL:
+				// PUSH, JMP
+				if(!mem->write_address(state.reg[VM_REG(VM_REG_PC)], state.reg[VM_REG(VM_REG_SP)]+state.reg[VM_REG(VM_REG_SS)])){
+					debug_printf("CPU CALL failed pushing PC to address %u at %u", state.reg[VM_REG(VM_REG_SP)]+state.reg[VM_REG(VM_REG_SS)], state.reg[VM_REG(VM_REG_PC)]);
+					return;
+				}
+				state.reg[VM_REG(VM_REG_SP)]++;
+			goto OP_JMP;
+
+			OP_RET:
+				// POP, JMP
+				if(state.reg[VM_REG(VM_REG_SP)] == 0){
+					debug_printf("CPU RET failed, stack pointer zero at %u", state.reg[VM_REG(VM_REG_PC)]);
+					return;
+				}
+				if(!mem->read_address(state.reg[VM_REG(VM_REG_SS)]+state.reg[VM_REG(VM_REG_SP)], instruction->VAL)){
+					debug_printf("CPU RET failed reading stack entry %u at %u", state.reg[VM_REG(VM_REG_SS)]+state.reg[VM_REG(VM_REG_SP)], state.reg[VM_REG(VM_REG_PC)]);
+					return;
+				}
+				state.reg[VM_REG(VM_REG_SP)]--;
+			goto OP_JMP;
 
 			finish:
 				state.reg[VM_REG(VM_REG_PC)]+=vm_opcode_length[instruction->OPCODE];

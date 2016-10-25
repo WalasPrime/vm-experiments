@@ -25,6 +25,8 @@ enum _vm_opcodes {
 	VM_OPCODE_JGE,
 	VM_OPCODE_JMP,
 
+	VM_OPCODE_PUSH,
+	VM_OPCODE_POP,
 	VM_OPCODE_CALL,
 	VM_OPCODE_RET,
 	VM_OPCODE_BREAK,
@@ -56,8 +58,10 @@ const uint32_t vm_opcode_length[] = {
 	2, // VM_OPCODE_JGE
 	2, // VM_OPCODE_JMP
 
+	1, // VM_OPCODE_PUSH
+	1, // VM_OPCODE_POP
 	2, // VM_OPCODE_CALL
-	1,  // VM_OPCODE_RET
+	1, // VM_OPCODE_RET
 	1 // VM_OPCODE_BREAK
 };
 
