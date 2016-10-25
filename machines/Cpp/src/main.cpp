@@ -54,7 +54,7 @@ int main(int argc, char* argv[]){
 
 	if(!ARG_DUMP_PATH.empty()){
 		debug_printf("Generating a memory dump file");
-		std::ofstream dump (ARG_DUMP_PATH, std::ofstream::binary);
+		std::ofstream dump (ARG_DUMP_PATH.c_str(), std::ofstream::binary);
 		dump.write((char*)&ARG_DUMP_OFFSET, sizeof(ARG_DUMP_OFFSET));
 		dump.write((char*)&ARG_DUMP_LENGTH, sizeof(ARG_DUMP_LENGTH));
 		uint32_t temp;
