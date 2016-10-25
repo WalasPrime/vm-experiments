@@ -2,7 +2,12 @@
 Very simple Virtual Machines (custom architecture) written in many languages for benchmarking purposes. A small project made to help understand the practical side of simulating a real logical computer architecture (not a physical one, we don't simulate delays on the transistors).
 
 ## Building
-This project uses SCons 2.5.0 as it's buildsystem (which requires Python 2.7). After cloning this repo just execute the `scons` command to build all the executables.
+This project uses SCons 2.5.0 as it's buildsystem and Python 2.7 as the testsuite. After cloning this repo just execute the `scons` command to build all the executables.
+Test scripts are contained within `./scripts/testsuite`.
+
+SCons Argument | Values | Meaning
+---- | ---- | ----
+DEBUG | 0,1 | Build machines with verbose output and additional checks
 
 ## Current machines
 Machine name | Description | Status
@@ -11,6 +16,9 @@ C | Pure C machine | On-hold, incomplete
 Cpp | Mixed C/C++ machine | Work-in-progress
 Cpp-ASM | Mixed C/C++/ASM (highly optimised) machine | Planned after architecture upgrades
 Java | | Planned after architecture upgrades
+JavaScript | Native JavaScript | Planned after architecture upgrades
+Node.js | Encapsulated JavaScript machine | Planned after JavaScript implementation
+PHP | | Planned after architecture upgrades
 
 # About the machine
 
@@ -19,6 +27,7 @@ Java | | Planned after architecture upgrades
 * [CPU registers](#cpu)
 * [Assembly](#assembly-markdown)
 * [Instructions](#instructions)
+* [Testing](#testing)
 
 ## Architecture
 The following description is subject to change over time. The following changes (not limited to) will be introduced over time:
@@ -99,6 +108,25 @@ JG | JG VAL | | Jump to the target instruction number (if L and Z flags are down
 JGE | JGE VAL | | Jump to the target instruction number (if L flag is down)
 PUSH | PUSH REG | [SS:SP] = REG; SP++ | Push a register value to the stack
 POP | POP REG | REG = [SS:SP]; SP-- | Pop a value into a register from the stack
-CALL | CALL VAL | | Push the current instruction number onto the stack then jump to the target instruction number (procedures and functions)
-RET | RET | | Pop an address from the stack then jump to it (end of procedures and functions)
+CALL | CALL VAL | PUSH PC; JMP VAL | Push the current instruction number onto the stack then jump to the target instruction number (procedures and functions)
+RET | RET | POP PC; PC++ | Pop an address from the stack then jump *after* it (end of procedures and functions)
 BREAK | BREAK | | Forcefully stop VM execution (breakpoint)
+
+### Testing
+In order for machines to be testable each implementation has to:
+* Allow executing different assembly programs (filename as argument)
+* Allow saving memory dumps into external binary files (filename, address, range as argument)
+
+To create a test:
+* Create an assembly program, save it in `./programs` with `.asm` extension
+* Create a memory dump (with machine arguments) and make sure the result is as expected (memory dumps contain 8 Bytes of location and size information at the begining)
+* Put the memory dump in `./programs` under the same filename as the program name, but with `.memdump` extension
+* Automatic tests in `./scripts/testsuite` will look for all `*.asm` files with corresponding `*.memdump` files, execute the programs on all machines and compare the memory dumps
+
+### Memory dump files
+Memory dump files (`.memdump`) are binary files of the following format:
+Size | Content
+---- | ----
+4 Bytes | Memory location
+4 Bytes | Dump length (dump_length)
+(dump_length) Bytes | Binary memory content
