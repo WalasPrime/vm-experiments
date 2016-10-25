@@ -89,26 +89,25 @@ Assembly language defines the following instructions (VM CPUs must properly impl
 
 Name | Instruction usage | Definition | Affected flags/Notes
 ---- | ---- | ---- | ----
-MOV | MOV REG1 REG2 | REG1 = REG2 | Z
-CMOV | CMOV REG VAL | REG = VAL | Z
-ADD | ADD REG1 REG2 | ACC = REG1 + REG2 | CZ
-ADC | ADC REG1 REG2 | ACC = REG1 + REG2 + (FLAGS[C] ? 1 : 0) | CZ
-SUB | SUB REG1 REG2 | ACC = REG1 - REG2 | CZL
-SBC | SBC REG1 REG2 | ACC = REG1 - REG2 - (FLAGS[C] ? 1 : 0) | CZL
+MOV | MOV REG1 REG2/VAL | REG1 = REG2/VAL | Z
+ADD | ADD REG1 REG2/VAL | ACC = REG1 + REG2/VAL | CZ
+ADC | ADC REG1 REG2/VAL | ACC = REG1 + REG2/VAL + (FLAGS[C] ? 1 : 0) | CZ
+SUB | SUB REG1 REG2/VAL | ACC = REG1 - REG2/VAL | CZL
+SBC | SBC REG1 REG2/VAL | ACC = REG1 - REG2/VAL - (FLAGS[C] ? 1 : 0) | CZL
 CLF | | FLAGS=0 | Clear flags
-LOAD | LOAD REG VAL | REG = [DS:VAL] | Load a 32 bit value from the memory, addressed with DS + VAL, into any register
-SAVE | SAVE REG VAL | [DS:VAL] = REG | Save a 32 bit value from any register to address DS + VAL
-CMP | CMP REG1 REG2 | Compare two register values, result is saved within flags | LZ
-JMP | JMP VAL | | Jump to the target instruction number
-JE | JE VAL | | Jump to the target instruction number (if Z flag is up)
-JNE | JNE VAL | | Jump to the target instruction number (if Z flag is down)
-JL | JL VAL | | Jump to the target instruction number (if L flag is up)
-JLE | JLE VAL | | Jump to the target instruction number (if L or Z flag is up)
-JG | JG VAL | | Jump to the target instruction number (if L and Z flags are down)
-JGE | JGE VAL | | Jump to the target instruction number (if L flag is down)
+LOAD | LOAD REG1 REG2/VAL | REG1 = [DS:REG2/VAL] | Load a 32 bit value from the memory, addressed with DS + VAL, into any register
+SAVE | SAVE REG1 REG2/VAL | [DS:REG2/VAL] = REG1 | Save a 32 bit value from any register to address DS + VAL
+CMP | CMP REG1 REG2/VAL | Compare two register values, result is saved within flags | LZ
+JMP | JMP REG/VAL | | Jump to the target instruction number
+JE | JE REG/VAL | | Jump to the target instruction number (if Z flag is up)
+JNE | JNE REG/VAL | | Jump to the target instruction number (if Z flag is down)
+JL | JL REG/VAL | | Jump to the target instruction number (if L flag is up)
+JLE | JLE REG/VAL | | Jump to the target instruction number (if L or Z flag is up)
+JG | JG REG/VAL | | Jump to the target instruction number (if L and Z flags are down)
+JGE | JGE REG/VAL | | Jump to the target instruction number (if L flag is down)
 PUSH | PUSH REG | [SS:SP] = REG; SP++ | Push a register value to the stack
 POP | POP REG | REG = [SS:SP]; SP-- | Pop a value into a register from the stack
-CALL | CALL VAL | PUSH PC; JMP VAL | Push the current instruction number onto the stack then jump to the target instruction number (procedures and functions)
+CALL | CALL REG/VAL | PUSH PC; JMP VAL | Push the current instruction number onto the stack then jump to the target instruction number (procedures and functions)
 RET | RET | POP PC; PC++ | Pop an address from the stack then jump *after* it (end of procedures and functions)
 BREAK | BREAK | | Forcefully stop VM execution (breakpoint)
 
