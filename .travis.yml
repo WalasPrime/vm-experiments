@@ -12,3 +12,4 @@ before_script:
 script: 
   - scons DEBUG=$DEBUG_MODE
   - ./machines/Cpp/bin/c_machine$DEBUG_SUFFIX
+  - python scripts/testsuite/test_programs.py
