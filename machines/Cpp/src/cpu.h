@@ -6,6 +6,7 @@
 #define VM_REG(VM_REGISTERS_NUM) (VM_REGISTERS_NUM-VM_REG32_ENUM_OFFSET)
 #define REG_VARIANT_OP_CHECK(instruction) if(instruction->REG1 == 0 || instruction->REG1 > VM_REG32_COUNT-1 || ((instruction->OPTS & VM_OPT_VARIANT_REG) && (instruction->REG2 == 0 || instruction->REG2 > VM_REG32_COUNT-1)))
 #define REG_OP_CHECK(reg) if(reg == 0 || reg > VM_REG32_COUNT-1)
+#define VARIANT_DETERMINE(vptr, instruction, state) vptr=&instruction->oVAL;if(instruction->OPTS & VM_OPT_VARIANT_REG)vptr=&state.reg[VM_REG(instruction->REG2)]
 
 struct _vm_cpu_state {
 	// All 32 bit registers
@@ -35,6 +36,7 @@ class vm_cpu {
 			// 6. Goto 1
 			vm_memcell_ext fetch;
 			vm_instruction* instruction = (vm_instruction*)&fetch;
+			uint32_t* vptr;
 
 			fetch:
 			if(!mem->read_address(state.reg[VM_REG(VM_REG_PC)], fetch.word[0].mem)){
@@ -58,6 +60,8 @@ class vm_cpu {
 					return;
 				}
 			}
+
+			debug_cout("@ "<<state.reg[VM_REG(VM_REG_PC)]<<": " << (uint32_t)instruction->OPCODE);
 
 			switch(instruction->OPCODE){
 				case VM_OPCODE_MOV: goto OP_MOV; break;
@@ -125,12 +129,23 @@ class vm_cpu {
 					debug_printf("CPU ADD Invalid register argument at %u", state.reg[VM_REG(VM_REG_PC)]);
 					return;
 				}
-				state.reg[VM_REG(VM_REG_ACC)] = state.reg[VM_REG(instruction->REG1)] + state.reg[VM_REG(instruction->REG2)];
-				if(state.reg[VM_REG(instruction->REG1)] & VM_2POW32_BIT && state.reg[VM_REG(instruction->REG2)] & VM_2POW32_BIT){
-					state.reg[VM_REG(VM_REG_FLAGS)] |= VM_FLAG_C;
+				state.reg[VM_REG(VM_REG_ACC)] = state.reg[VM_REG(instruction->REG1)] + instruction->oVAL;
+				if(instruction->OPTS & VM_OPT_VARIANT_REG){
+					state.reg[VM_REG(VM_REG_ACC)] = state.reg[VM_REG(instruction->REG1)] + state.reg[VM_REG(instruction->REG2)];
+					if(state.reg[VM_REG(instruction->REG1)] & VM_2POW32_BIT && (state.reg[VM_REG(instruction->REG2)] & VM_2POW32_BIT)){
+						state.reg[VM_REG(VM_REG_FLAGS)] |= VM_FLAG_C;
+					}else{
+						state.reg[VM_REG(VM_REG_FLAGS)] &= ~VM_FLAG_C;
+					}
 				}else{
-					state.reg[VM_REG(VM_REG_FLAGS)] &= ~VM_FLAG_C;
+					// FIXME: Copypasta from above
+					if(state.reg[VM_REG(instruction->REG1)] & VM_2POW32_BIT && instruction->oVAL & VM_2POW32_BIT){
+						state.reg[VM_REG(VM_REG_FLAGS)] |= VM_FLAG_C;
+					}else{
+						state.reg[VM_REG(VM_REG_FLAGS)] &= ~VM_FLAG_C;
+					}
 				}
+
 				if(state.reg[VM_REG(VM_REG_ACC)] == 0){
 					state.reg[VM_REG(VM_REG_FLAGS)] |= VM_FLAG_Z;
 				}else{
@@ -143,26 +158,24 @@ class vm_cpu {
 					debug_printf("CPU ADC Invalid register argument at %u", state.reg[VM_REG(VM_REG_PC)]);
 					return;
 				}
-				// FIXME: Nasty ADD copypasta
-				state.reg[VM_REG(VM_REG_ACC)] = state.reg[VM_REG(instruction->REG1)] + state.reg[VM_REG(instruction->REG2)] + (state.reg[VM_REG(VM_REG_FLAGS)] & VM_FLAG_C);
-				if(state.reg[VM_REG(instruction->REG1)] & VM_2POW32_BIT && state.reg[VM_REG(instruction->REG2)] & VM_2POW32_BIT){
-					state.reg[VM_REG(VM_REG_FLAGS)] |= VM_FLAG_C;
-				}else{
-					state.reg[VM_REG(VM_REG_FLAGS)] &= ~VM_FLAG_C;
+				if(instruction->OPTS & VM_OPT_VARIANT_REG){
+					instruction->oVAL = state.reg[VM_REG(instruction->REG2)];
+					instruction->OPTS &= ~VM_OPT_VARIANT_REG;
 				}
-				if(state.reg[VM_REG(VM_REG_ACC)] == 0){
-					state.reg[VM_REG(VM_REG_FLAGS)] |= VM_FLAG_Z;
-				}else{
-					state.reg[VM_REG(VM_REG_FLAGS)] &= ~VM_FLAG_Z;
-				}
-			goto finish;
+				instruction->OPTS = VM_OPT_VARIANT_REG;
+				instruction->oVAL++;
+				// FIXME: This kind of ignores the case if REG2 is 0xFFFFFFFF when we have to set the carry flag
+			goto OP_ADD;
 
 			OP_SUB:
 				REG_VARIANT_OP_CHECK(instruction){
 					debug_printf("CPU SUB Invalid register argument at %u", state.reg[VM_REG(VM_REG_PC)]);
 					return;
 				}
-				state.reg[VM_REG(VM_REG_ACC)] = (uint32_t)((int32_t)state.reg[VM_REG(instruction->REG1)] - (int32_t)state.reg[VM_REG(instruction->REG2)]);
+				state.reg[VM_REG(VM_REG_ACC)] = (uint32_t)((int32_t)state.reg[VM_REG(instruction->REG1)] - (int32_t)instruction->oVAL);
+				if(instruction->OPTS & VM_OPT_VARIANT_REG){
+					state.reg[VM_REG(VM_REG_ACC)] = (uint32_t)((int32_t)state.reg[VM_REG(instruction->REG1)] - (int32_t)state.reg[VM_REG(instruction->REG2)]);
+				}
 				// TODO: Overflow flags
 				// TODO: Carry flag
 				// FIXME: ADD copypasta
@@ -189,11 +202,17 @@ class vm_cpu {
 					return;
 				}
 				state.reg[VM_REG(VM_REG_FLAGS)] &= ~(VM_FLAG_L | VM_FLAG_Z);
-				if(state.reg[VM_REG(instruction->REG1)] < state.reg[VM_REG(instruction->REG2)]){
+				VARIANT_DETERMINE(vptr, instruction, state);
+
+				debug_cout("\t\tCMP values " << state.reg[VM_REG(instruction->REG1)] << " and " << *vptr);
+
+				if(state.reg[VM_REG(instruction->REG1)] < *vptr){
 					state.reg[VM_REG(VM_REG_FLAGS)] |= VM_FLAG_L;
+					debug_cout("\t\tCMP LESS SET");
 				}
-				if(state.reg[VM_REG(instruction->REG1)] == state.reg[VM_REG(instruction->REG2)]){
+				if(state.reg[VM_REG(instruction->REG1)] == *vptr){
 					state.reg[VM_REG(VM_REG_FLAGS)] |= VM_FLAG_Z;
+					debug_cout("\t\tCMP EQUAL SET");
 				}
 			goto finish;
 
@@ -202,8 +221,9 @@ class vm_cpu {
 					debug_printf("CPU LOAD Invalid register argument at %u", state.reg[VM_REG(VM_REG_PC)]);
 					return;
 				}
-				if(!mem->read_address(instruction->VAL, state.reg[VM_REG(instruction->REG1)])){
-					debug_printf("CPU LOAD failed reading address %u at %u", instruction->VAL, state.reg[VM_REG(VM_REG_PC)]);
+				VARIANT_DETERMINE(vptr, instruction, state);
+				if(!mem->read_address(*vptr, state.reg[VM_REG(instruction->REG1)])){
+					debug_printf("CPU LOAD failed reading address %u at %u", *vptr, state.reg[VM_REG(VM_REG_PC)]);
 					return;
 				}
 			goto finish;
@@ -213,46 +233,48 @@ class vm_cpu {
 					debug_printf("CPU SAVE Invalid register argument at %u", instruction->REG1);
 					return;
 				}
-				if(!mem->write_address(instruction->VAL, state.reg[VM_REG(instruction->REG1)])){
-					debug_printf("CPU SAVE failed writing address %u at %u", instruction->VAL, state.reg[VM_REG(VM_REG_PC)]);
+				VARIANT_DETERMINE(vptr, instruction, state);
+				if(!mem->write_address(*vptr, state.reg[VM_REG(instruction->REG1)])){
+					debug_printf("CPU SAVE failed writing address %u at %u", *vptr, state.reg[VM_REG(VM_REG_PC)]);
 					return;
 				}
 			goto finish;
 
 			OP_JE:
-				if(state.reg[VM_REG(VM_REG_PC)] & VM_FLAG_Z != 0)
+				if((state.reg[VM_REG(VM_REG_FLAGS)] & VM_FLAG_Z) != 0)
 					goto OP_JMP;
 			goto finish;
 
 			OP_JNE:
-				if(state.reg[VM_REG(VM_REG_PC)] & VM_FLAG_Z == 0)
+				if((state.reg[VM_REG(VM_REG_FLAGS)] & VM_FLAG_Z) == 0)
 					goto OP_JMP;
 			goto finish;
 
 			OP_JL:
-				if(state.reg[VM_REG(VM_REG_PC)] & VM_FLAG_L != 0)
+				if((state.reg[VM_REG(VM_REG_FLAGS)] & VM_FLAG_L) != 0)
 					goto OP_JMP;
+				debug_printf("\t\tJL LESS FLAG -NOT- SET, raw: %u", state.reg[VM_REG(VM_REG_FLAGS)]);
 			goto finish;
 
 			OP_JLE:
-				if(state.reg[VM_REG(VM_REG_PC)] & (VM_FLAG_L | VM_FLAG_Z) != 0)
+				if((state.reg[VM_REG(VM_REG_FLAGS)] & (VM_FLAG_L | VM_FLAG_Z)) != 0)
 					goto OP_JMP;
 			goto finish;
 
 			OP_JG:
-				if(state.reg[VM_REG(VM_REG_PC)] & (VM_FLAG_L | VM_FLAG_Z) == 0)
+				if((state.reg[VM_REG(VM_REG_FLAGS)] & (VM_FLAG_L | VM_FLAG_Z)) == 0)
 					goto OP_JMP;
 			goto finish;
 
 			OP_JGE:
-				if(state.reg[VM_REG(VM_REG_PC)] & (VM_FLAG_L) == 0)
+				if((state.reg[VM_REG(VM_REG_FLAGS)] & (VM_FLAG_L)) == 0)
 					goto OP_JMP;
 			goto finish;
 
 			OP_JMP:
 				state.reg[VM_REG(VM_REG_PC)] = instruction->oVAL;
 				if(instruction->OPTS & VM_OPT_VARIANT_REG){
-					if(REG_OP_CHECK(instruction->REG2)){
+					REG_OP_CHECK(instruction->REG2){
 						state.reg[VM_REG(VM_REG_PC)] = instruction->REG2;
 					}else{
 						debug_printf("CPU JMP Invalid register at %u", state.reg[VM_REG(VM_REG_PC)]);

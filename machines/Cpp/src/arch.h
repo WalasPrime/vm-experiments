@@ -37,15 +37,15 @@ enum _vm_opcodes {
 const uint32_t vm_opcode_length[] = {
 	0, // _VM_INVALID_OPCODE_
 
-	1, // VM_OPCODE_MOV
+	2, // VM_OPCODE_MOV
 	//2, // VM_OPCODE_CMOV
-	1, // VM_OPCODE_ADD
-	1, // VM_OPCODE_ADC
-	1, // VM_OPCODE_SUB
-	1, // VM_OPCODE_SBC
+	2, // VM_OPCODE_ADD
+	2, // VM_OPCODE_ADC
+	2, // VM_OPCODE_SUB
+	2, // VM_OPCODE_SBC
 
 	1, // VM_OPCODE_CLF
-	1, // VM_OPCODE_CMP
+	2, // VM_OPCODE_CMP
 
 	2, // VM_OPCODE_LOAD
 	2, // VM_OPCODE_SAVE

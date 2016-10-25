@@ -6,6 +6,8 @@ counter:
     ADD R0 1
     MOV R0 ACC
     SAVE R0 R10
+    ADD R10 1
+    MOV R10 ACC
     CMP R0 10
     JL @counter
 

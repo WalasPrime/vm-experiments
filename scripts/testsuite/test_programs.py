@@ -11,13 +11,16 @@ path = './programs/'
 
 # Machine call definitions, return status code
 def Cpp_process(appPath, dumpTargetPath='', dumpAddress=0, dumpLength=0):
-	p = subprocess.Popen(['machines/Cpp/bin/c_machine'+DEBUG_SUFFIX, '-program', appPath], stdout=subprocess.PIPE)
-	p.wait()
+	dumpcmds = []
+	if dumpTargetPath:
+		dumpcmds = ['-memdump', dumpTargetPath, '-dumpaddr', str(dumpAddress), '-dumplength', str(dumpLength)]
+	p = subprocess.Popen(['machines/Cpp/bin/c_machine'+DEBUG_SUFFIX, '-program', appPath]+dumpcmds, stdout=subprocess.PIPE)
+	out, err = p.communicate()
 	status = "OK" if p.returncode == 0 else "FAILED !!!" 
 	print("Cpp"+DEBUG_SUFFIX+": "+status)
 	if p.returncode != 0:
 		print("Output was:")
-		print(p.stdout.read())
+		print(out)
 	return p.returncode == 0
 
 # End of machine call definitions
@@ -31,8 +34,8 @@ def memdump_read_location(dumpFilename):
 	f = open(dumpFilename, 'rb')
 	if not f:
 		return [0, 0, 0]
-	addr, _ = struct.unpack('i', f.read(4))
-	length, _ = struct.unpack('i', f.read(4))
+	addr = struct.unpack('<i', f.read(4))[0]
+	length = struct.unpack('<i', f.read(4))[0]
 
 	return [1, addr, length]
 
@@ -71,7 +74,7 @@ for name in compTests:
 		continue
 	print("Mem @ "+str(addr)+" len "+str(length))
 
-	ndumpname = name+'__result.memdump'
+	ndumpname = './programs/'+name+'__result.memdump'
 
 	for machine, execute in machines.iteritems():
 		if(not execute('./programs/'+name+'.asm', ndumpname, addr, length)):

@@ -308,10 +308,12 @@ class asm_loader {
 			// SECOND PASS [memwrite=0] - Determine instruction lengths (or execute third-pass if not referencing etiquettes)
 			// THIRD PASS [memwrite=1] - Convert the instruction array to raw opcodes written into the memory
 			uint32_t current_mem_ptr;
+			debug_printf("Begining second pass");
 			
 			for(uint8_t memwrite = 0; memwrite <= 1; memwrite++){
 				current_mem_ptr = 0;
 				for(uint32_t i = 0; i < instructions.instructions.size(); i++){
+					debug_printf("Processing instruction %u", i);
 					asm_loader_raw_instruction* op = instructions.get_instruction(i);
 					if(!op){
 						debug_printf("Tried to process an instruction, but fetching resulted in a NULL!");
@@ -385,8 +387,8 @@ class asm_loader {
 								ERROR("Invalid argument count (expected a variant register identifier, an address, value or etiquette)");
 							opcode.REG2 = get_register_code(op->INSTRUCTION_ARGS[0]);
 							if(opcode.REG2 == _VM_INVALID_REG_){
-								if(!argument_references_etiquette(op, 1) || memwrite == 1){
-									if(!format_numeric_value(&instructions, op, 1, opcode.oVAL))
+								if(!argument_references_etiquette(op, 0) || memwrite == 1){
+									if(!format_numeric_value(&instructions, op, 0, opcode.oVAL))
 										return false;
 									can_write = true;
 								}
@@ -404,8 +406,8 @@ class asm_loader {
 							
 							opcode.REG2 = get_register_code(op->INSTRUCTION_ARGS[1]);
 							if(opcode.REG2 == _VM_INVALID_REG_){
-								if(!argument_references_etiquette(op, 2) || memwrite == 1){
-									if(!format_numeric_value(&instructions, op, 2, opcode.oVAL))
+								if(!argument_references_etiquette(op, 1) || memwrite == 1){
+									if(!format_numeric_value(&instructions, op, 1, opcode.oVAL))
 										return false;
 									can_write = true;
 								}
