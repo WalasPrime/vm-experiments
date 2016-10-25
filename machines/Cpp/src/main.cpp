@@ -3,17 +3,32 @@
 //	- No special optimisations should be used here
 //	- This is the "it just works" machine
 
+#include <ofstream>
+
 #include "util.h"
 #include "arch.h"
 #include "memory.h"
 #include "assembler_loader.h"
 #include "cpu.h"
+#include "argv.h"
 
-int main(){
+int main(int argc, char* argv[]){
+	process_arguments(argc, argv);
+	if(ARG_PROGRAM.empty()){
+		printf("Machine requires a program to run (-program option)\n");
+		return 1;
+	}
+
 	if(DEBUG_MODE == 0){
 		printf("Machine in C++ starting\n");
 	}else{
 		printf("Machine in C++ starting DEBUG mode\n");
+	}
+	debug_cout("Will run program " << ARG_PROGRAM);
+	if(ARG_DUMP_PATH.empty()){
+		debug_cout("No memory dump will be created");
+	}else{
+		debug_cout("A memory dump will be created at " << ARG_DUMP_PATH << " of area " << ARG_DUMP_OFFSET << " - " << (ARG_DUMP_OFFSET+ARG_DUMP_LENGTH));
 	}
 	debug_printf("Memory manager, total addressable memory: %u bytes", VM_MAX_MEM_ADDR*4);
 	debug_printf("Memory manager, segment size: %u bytes", VM_MGR_MEMORY_SEGMENT_SIZE*4);
@@ -24,7 +39,7 @@ int main(){
 	vm_memory_controller* mem = new vm_memory_controller();
 
 	asm_loader asm_ldr;
-	if(!asm_ldr.parse_file("programs/test_basic.asm", mem)){
+	if(!asm_ldr.parse_file(ARG_PROGRAM, mem)){
 		std::cout << "Error while compiling the program: " << std::endl << asm_ldr.last_error_str << " at line " << asm_ldr.last_error_line << " (col " << asm_ldr.last_error_col << ")" << std::endl;
 		std::cout << asm_ldr.last_error_line_content << std::endl;
 		std::cout << std::string(asm_ldr.last_error_col, ' ') << "^" << std::endl;
@@ -36,7 +51,23 @@ int main(){
 
 	vm_cpu exec(mem);
 	exec.execute_continuous();
-	mem->dump_mem(0,32);
+
+	if(!ARG_DUMP_PATH.empty()){
+		debug_printf("Generating a memory dump file");
+		std::ofstream dump (ARG_DUMP_PATH, std::ofstream::binary);
+		dump.write(&ARG_DUMP_OFFSET, sizeof(ARG_DUMP_OFFSET));
+		dump.write(&ARG_DUMP_LENGTH, sizeof(ARG_DUMP_LENGTH));
+		uint32_t temp;
+		for(uint32_t at = ARG_DUMP_OFFSET; at < ARG_DUMP_OFFSET+ARG_DUMP_LENGTH; at++){
+			if(!mem->read_address(at, temp)){
+				printf("Error while generating a memory dump at mem %u\n", at);
+				break;
+			}
+			dump.write(&temp, sizeof(temp));
+		}
+		debug_printf("Finished generating a dump file, closing");
+		dump.close();
+	}
 
 	debug_printf("CLEANING");
 	delete mem;

@@ -11,7 +11,7 @@ path = './programs/'
 
 # Machine call definitions, return status code
 def Cpp_process(appPath, dumpTargetPath='', dumpAddress=0, dumpLength=0):
-	p = subprocess.Popen(['machines/Cpp/bin/c_machine'+DEBUG_SUFFIX], stdout=subprocess.PIPE)
+	p = subprocess.Popen(['machines/Cpp/bin/c_machine'+DEBUG_SUFFIX, '-program', appPath], stdout=subprocess.PIPE)
 	p.wait()
 	status = "OK" if p.returncode == 0 else "FAILED !!!" 
 	print("Cpp"+DEBUG_SUFFIX+": "+status)
