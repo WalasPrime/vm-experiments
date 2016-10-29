@@ -39,6 +39,7 @@ class vm_cpu {
 			uint32_t* vptr;
 
 			fetch:
+			debug_printf("Fetching instruction at %u", state.reg[VM_REG(VM_REG_PC)]);
 			if(!mem->read_address(state.reg[VM_REG(VM_REG_PC)], fetch.word[0].mem)){
 				// FAILED TO READ A MEMORY CELL!
 				debug_printf("CPU Failed reading memory cell addr %u for opcode fetch", state.reg[VM_REG(VM_REG_PC)]);
@@ -54,6 +55,11 @@ class vm_cpu {
 				return;
 			}
 
+			if(instruction->OPCODE > (sizeof(vm_opcode_length)/sizeof(vm_opcode_length[0]))){
+				debug_printf("CPU Failed reading additional arguments for a valid instruction");
+				debug_printf("-- This is an implementation error, please fix OPCODE %u", instruction->OPCODE);
+				return;
+			}
 			if(vm_opcode_length[instruction->OPCODE] > 1){
 				if(!mem->read_address(state.reg[VM_REG(VM_REG_PC)]+1, fetch.word[1].mem)){
 					debug_printf("CPU Failed reading memory cell addr %u for extended instruction fetch", state.reg[VM_REG(VM_REG_PC)]+1);
@@ -279,12 +285,12 @@ class vm_cpu {
 					return;
 				}
 				// FIXME: OP_CALL copypasta
-				if(!mem->write_address(state.reg[VM_REG(instruction->REG1)], state.reg[VM_REG(VM_REG_SP)]+state.reg[VM_REG(VM_REG_SS)])){
+				if(!mem->write_address(state.reg[VM_REG(VM_REG_SP)]+state.reg[VM_REG(VM_REG_SS)], state.reg[VM_REG(instruction->REG1)])){
 					debug_printf("CPU PUSH failed pushing registry to address %u at %u", state.reg[VM_REG(VM_REG_SP)]+state.reg[VM_REG(VM_REG_SS)], state.reg[VM_REG(VM_REG_PC)]);
 					return;
 				}
 				state.reg[VM_REG(VM_REG_SP)]++;
-			goto fetch;
+			goto finish;
 
 			OP_POP:
 				REG_OP_CHECK(instruction->REG1){
@@ -296,12 +302,13 @@ class vm_cpu {
 					debug_printf("CPU POP failed, stack pointer zero at %u", state.reg[VM_REG(VM_REG_PC)]);
 					return;
 				}
-				if(!mem->read_address(state.reg[VM_REG(instruction->REG1)]+state.reg[VM_REG(VM_REG_SP)], instruction->VAL)){
+				if(!mem->read_address(state.reg[VM_REG(VM_REG_SS)]+state.reg[VM_REG(VM_REG_SP)], instruction->VAL)){
 					debug_printf("CPU POP failed reading stack entry %u at %u", state.reg[VM_REG(VM_REG_SS)]+state.reg[VM_REG(VM_REG_SP)], state.reg[VM_REG(VM_REG_PC)]);
 					return;
 				}
+				state.reg[VM_REG(instruction->REG1)] = instruction->VAL;
 				state.reg[VM_REG(VM_REG_SP)]--;
-			goto fetch;
+			goto finish;
 
 			OP_CALL:
 				// PUSH, JMP
@@ -330,6 +337,10 @@ class vm_cpu {
 				return;
 
 			finish:
+				/*if(instruction->OPCODE > (sizeof(vm_opcode_length)/sizeof(vm_opcode_length[0]))){
+					debug_printf("CPU Cannot shift instruction pointer - no instruction legnth defined");
+					return;
+				}*/
 				state.reg[VM_REG(VM_REG_PC)]+=vm_opcode_length[instruction->OPCODE];
 			goto fetch;
 		}
