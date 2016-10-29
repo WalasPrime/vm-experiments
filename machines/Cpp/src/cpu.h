@@ -65,7 +65,6 @@ class vm_cpu {
 
 			switch(instruction->OPCODE){
 				case VM_OPCODE_MOV: goto OP_MOV; break;
-				//case VM_OPCODE_CMOV: goto OP_CMOV; break;
 				case VM_OPCODE_ADD: goto OP_ADD; break;
 				case VM_OPCODE_ADC: goto OP_ADC; break;
 				case VM_OPCODE_SUB: goto OP_SUB; break;
@@ -89,7 +88,7 @@ class vm_cpu {
 				case VM_OPCODE_POP: goto OP_POP; break;
 				case VM_OPCODE_CALL: goto OP_CALL; break;
 				case VM_OPCODE_RET: goto OP_RET; break;
-				// TODO: BREAK
+				case VM_OPCODE_BREAK: goto OP_BREAK; break;
 				default:
 					debug_printf("CPU Encountered an unimplemented instruction %u at %u", instruction->OPCODE, state.reg[VM_REG(VM_REG_PC)]);
 					goto finish;
@@ -110,19 +109,6 @@ class vm_cpu {
 					state.reg[VM_REG(VM_REG_FLAGS)] &= ~VM_FLAG_Z;
 				}
 			goto finish;
-
-			/*OP_CMOV:
-				if(instruction->REG1 == 0 || instruction->REG1 > VM_REG32_COUNT-1){
-					debug_printf("CPU CMOV Invalid register %u at %u", instruction->REG1, state.reg[VM_REG(VM_REG_PC)]);
-					return;
-				}
-				state.reg[VM_REG(instruction->REG1)] = instruction->oVAL;
-				if(state.reg[VM_REG(instruction->REG1)] == 0){
-					state.reg[VM_REG(VM_REG_FLAGS)] |= VM_FLAG_Z;
-				}else{
-					state.reg[VM_REG(VM_REG_FLAGS)] &= ~VM_FLAG_Z;
-				}
-			goto finish;*/
 
 			OP_ADD:
 				REG_VARIANT_OP_CHECK(instruction){
@@ -334,6 +320,10 @@ class vm_cpu {
 				}
 				state.reg[VM_REG(VM_REG_SP)]--;
 			goto OP_JMP;
+
+			OP_BREAK:
+				debug_printf("CPU BREAK at %u", state.reg[VM_REG(VM_REG_PC)]);
+				return;
 
 			finish:
 				state.reg[VM_REG(VM_REG_PC)]+=vm_opcode_length[instruction->OPCODE];

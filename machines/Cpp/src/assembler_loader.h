@@ -348,7 +348,6 @@ class asm_loader {
 								ERROR("Unknown register (first argument)");
 							if(opcode.REG2 == _VM_INVALID_REG_)
 								ERROR("Unknown register (second argument)");
-								// TODO: Use Variant
 							can_write = true;
 						break;
 						case OPCODE_REG:
@@ -362,7 +361,6 @@ class asm_loader {
 						case OPCODE_VALUE_32BIT:
 							if(op->INSTRUCTION_ARGS.size() != 1)
 								ERROR("Invalid argument count (expected 1 address or etiquette)");
-							// TODO: Try Variant first
 							if(!argument_references_etiquette(op, 0) || memwrite == 1){
 								if(!format_numeric_value(&instructions, op, 0, opcode.VAL))
 									return false;
