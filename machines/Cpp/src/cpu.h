@@ -4,8 +4,8 @@
 #include "memory.h"
 
 #define VM_REG(VM_REGISTERS_NUM) (VM_REGISTERS_NUM-VM_REG32_ENUM_OFFSET)
-#define REG_VARIANT_OP_CHECK(instruction) if(instruction->REG1 == 0 || instruction->REG1 > VM_REG32_COUNT-1 || ((instruction->OPTS & VM_OPT_VARIANT_REG) && (instruction->REG2 == 0 || instruction->REG2 > VM_REG32_COUNT-1)))
-#define REG_OP_CHECK(reg) if(reg == 0 || reg > VM_REG32_COUNT-1)
+#define REG_VARIANT_OP_CHECK(instruction) if(VM_REG(instruction->REG1) == 0 || VM_REG(instruction->REG1) > VM_REG32_COUNT-1 || ((instruction->OPTS & VM_OPT_VARIANT_REG) && (VM_REG(instruction->REG2) == 0 || VM_REG(instruction->REG2) > VM_REG32_COUNT-1)))
+#define REG_OP_CHECK(reg) if(VM_REG(reg) == 0 || VM_REG(reg) > VM_REG32_COUNT-1)
 #define VARIANT_DETERMINE(vptr, instruction, state) vptr=&instruction->oVAL;if(instruction->OPTS & VM_OPT_VARIANT_REG)vptr=&state.reg[VM_REG(instruction->REG2)]
 
 struct _vm_cpu_state {
@@ -95,8 +95,12 @@ class vm_cpu {
 			}
 
 			OP_MOV:
+				REG_OP_CHECK(instruction->REG1){
+					debug_printf("CPU MOV Invalid registser argument %u at %u", instruction->REG1, state.reg[VM_REG(VM_REG_PC)]);
+					return;
+				}
 				REG_VARIANT_OP_CHECK(instruction){
-					debug_printf("CPU MOV Invalid register argument at %u", state.reg[VM_REG(VM_REG_PC)]);
+					debug_printf("CPU MOV Invalid register or variant argument at %u", state.reg[VM_REG(VM_REG_PC)]);
 					return;
 				}
 				state.reg[VM_REG(instruction->REG1)] = instruction->oVAL;
