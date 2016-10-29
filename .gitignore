@@ -1,5 +1,5 @@
 *.exe
 *.obj
 *.dblite
-*.memdump
+*__result.memdump
 .vscode
