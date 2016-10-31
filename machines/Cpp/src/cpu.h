@@ -302,17 +302,18 @@ class vm_cpu {
 					debug_printf("CPU POP failed, stack pointer zero at %u", state.reg[VM_REG(VM_REG_PC)]);
 					return;
 				}
-				if(!mem->read_address(state.reg[VM_REG(VM_REG_SS)]+state.reg[VM_REG(VM_REG_SP)], instruction->VAL)){
+				state.reg[VM_REG(VM_REG_SP)]--;
+				if(!mem->read_address(state.reg[VM_REG(VM_REG_SS)]+state.reg[VM_REG(VM_REG_SP)], instruction->oVAL)){
 					debug_printf("CPU POP failed reading stack entry %u at %u", state.reg[VM_REG(VM_REG_SS)]+state.reg[VM_REG(VM_REG_SP)], state.reg[VM_REG(VM_REG_PC)]);
 					return;
 				}
-				state.reg[VM_REG(instruction->REG1)] = instruction->VAL;
-				state.reg[VM_REG(VM_REG_SP)]--;
+				// FIXME: CRASH
+				state.reg[VM_REG(instruction->REG1)] = instruction->oVAL;
 			goto finish;
 
 			OP_CALL:
 				// PUSH, JMP
-				if(!mem->write_address(state.reg[VM_REG(VM_REG_PC)], state.reg[VM_REG(VM_REG_SP)]+state.reg[VM_REG(VM_REG_SS)])){
+				if(!mem->write_address(state.reg[VM_REG(VM_REG_SP)]+state.reg[VM_REG(VM_REG_SS)], state.reg[VM_REG(VM_REG_PC)])){
 					debug_printf("CPU CALL failed pushing PC to address %u at %u", state.reg[VM_REG(VM_REG_SP)]+state.reg[VM_REG(VM_REG_SS)], state.reg[VM_REG(VM_REG_PC)]);
 					return;
 				}
@@ -325,11 +326,11 @@ class vm_cpu {
 					debug_printf("CPU RET failed, stack pointer zero at %u", state.reg[VM_REG(VM_REG_PC)]);
 					return;
 				}
+				state.reg[VM_REG(VM_REG_SP)]--;
 				if(!mem->read_address(state.reg[VM_REG(VM_REG_SS)]+state.reg[VM_REG(VM_REG_SP)], instruction->oVAL)){
 					debug_printf("CPU RET failed reading stack entry %u at %u", state.reg[VM_REG(VM_REG_SS)]+state.reg[VM_REG(VM_REG_SP)], state.reg[VM_REG(VM_REG_PC)]);
 					return;
 				}
-				state.reg[VM_REG(VM_REG_SP)]--;
 			goto OP_JMP;
 
 			OP_BREAK:

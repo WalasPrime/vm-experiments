@@ -35,6 +35,10 @@ class vm_memory_controller {
 
 		bool touch_address(uint32_t addr){
 			uint32_t segment = VM_ADDR_SEGMENT(addr);
+			if(segment >= VM_MGR_MEMORY_SEGMENT_COUNT){
+				debug_printf("MEMORY Segmentation logic error while evaluating address %u", addr);
+				return false;
+			}
 			if(this->segments[segment] == NULL){
 				return this->allocate_segment(segment);
 			}
