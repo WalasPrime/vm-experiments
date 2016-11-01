@@ -313,6 +313,7 @@ class vm_cpu {
 
 			OP_CALL:
 				// PUSH, JMP
+				debug_printf("\t\tCALL %u", instruction->oVAL);
 				if(!mem->write_address(state.reg[VM_REG(VM_REG_SP)]+state.reg[VM_REG(VM_REG_SS)], state.reg[VM_REG(VM_REG_PC)])){
 					debug_printf("CPU CALL failed pushing PC to address %u at %u", state.reg[VM_REG(VM_REG_SP)]+state.reg[VM_REG(VM_REG_SS)], state.reg[VM_REG(VM_REG_PC)]);
 					return;
@@ -331,6 +332,8 @@ class vm_cpu {
 					debug_printf("CPU RET failed reading stack entry %u at %u", state.reg[VM_REG(VM_REG_SS)]+state.reg[VM_REG(VM_REG_SP)], state.reg[VM_REG(VM_REG_PC)]);
 					return;
 				}
+				instruction->oVAL+=vm_opcode_length[VM_OPCODE_CALL];
+				debug_printf("\t\tRET to %u", instruction->oVAL);
 			goto OP_JMP;
 
 			OP_BREAK:
