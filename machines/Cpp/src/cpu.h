@@ -74,7 +74,7 @@ class vm_cpu {
 				case VM_OPCODE_ADD: goto OP_ADD; break;
 				case VM_OPCODE_ADC: goto OP_ADC; break;
 				case VM_OPCODE_SUB: goto OP_SUB; break;
-				// TODO: case VM_OPCODE_SBC: goto OP_SBC; break;
+				case VM_OPCODE_SBC: goto OP_SBC; break;
 
 				case VM_OPCODE_CLF: goto OP_CLF; break;
 				case VM_OPCODE_CMP: goto OP_CMP; break;
@@ -158,7 +158,7 @@ class vm_cpu {
 					instruction->oVAL = state.reg[VM_REG(instruction->REG2)];
 					instruction->OPTS &= ~VM_OPT_VARIANT_REG;
 				}
-				instruction->OPTS = VM_OPT_VARIANT_REG;
+				//instruction->OPTS = VM_OPT_VARIANT_REG;
 				instruction->oVAL++;
 				// FIXME: This kind of ignores the case if REG2 is 0xFFFFFFFF when we have to set the carry flag
 			goto OP_ADD;
@@ -182,11 +182,18 @@ class vm_cpu {
 				}
 			goto finish;
 
-			/*
 			OP_SBC:
-
-			goto finish;
-			*/
+				REG_VARIANT_OP_CHECK(instruction){
+					debug_printf("CPU SBC Invalid register argument at %u", state.reg[VM_REG(VM_REG_PC)]);
+					return;
+				}
+				if(instruction->OPTS & VM_OPT_VARIANT_REG){
+					instruction->oVAL = state.reg[VM_REG(instruction->REG2)];
+					instruction->OPTS &= ~ VM_OPT_VARIANT_REG;
+				}
+				instruction->oVAL++;
+				// FIXME: Same as ADC
+			goto OP_SUB;
 
 			OP_CLF:
 				state.reg[VM_REG(VM_REG_FLAGS)] = 0;

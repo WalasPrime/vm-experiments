@@ -5,6 +5,7 @@
 #include <cstring>
 #include <stdio.h>
 #include <string>
+#include <sstream></sstream>
 #include <iostream>
 
 #if DEBUG == 1
@@ -55,3 +56,8 @@
 		#define debug_printf(str, ...) printf(CONCAT(str,"\n"),__VA_ARGS__)
 	#endif
 #endif
+
+// http://stackoverflow.com/questions/5590381/easiest-way-to-convert-int-to-string-in-c
+#define SSTR( x ) static_cast< std::ostringstream & >( \
+        ( std::ostringstream() << std::dec << x ) ).str()
+

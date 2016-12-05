@@ -465,12 +465,14 @@ class asm_loader {
 					return false;
 				}
 			}
-			dst = atoi(op->INSTRUCTION_ARGS[which_arg].c_str());
-			char buff[128];
-			itoa(dst, buff, 10);
-			if(std::string(buff) != op->INSTRUCTION_ARGS[which_arg]){
+
+			dst = static_cast<uint32_t>(std::stoll(op->INSTRUCTION_ARGS[which_arg]));
+			if(SSTR(dst) != op->INSTRUCTION_ARGS[which_arg]){
 				errorize(op->raw_line, "Invalid formatting of an absolute value", op->line_num, 0);
+				debug_cout("Had " << op->INSTRUCTION_ARGS[which_arg] << " coverted to " << SSTR(dst) << "(raw " << dst << ")");
 				return false;
+			}else{
+				debug_cout("Had " << op->INSTRUCTION_ARGS[which_arg] << " coverted to " << SSTR(dst) << "(raw " << dst << ")");
 			}
 			return true;
 		}
