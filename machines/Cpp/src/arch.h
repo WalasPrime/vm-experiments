@@ -47,7 +47,7 @@ const uint32_t vm_opcode_length[] = {
 	1, // VM_OPCODE_INC
 	2, // VM_OPCODE_SUB
 	2, // VM_OPCODE_SBC
-	2, // VM_OPCODE_DEC
+	1, // VM_OPCODE_DEC
 
 	1, // VM_OPCODE_CLF
 	2, // VM_OPCODE_CMP
