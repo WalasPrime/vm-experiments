@@ -51,6 +51,16 @@ int main(int argc, char* argv[]){
 
 	vm_cpu exec(mem);
 	exec.execute_continuous();
+	if(exec.state.status == VM_STATUS_FAILED){
+		std::cout << "Program FAILED at " << exec.state.reg[VM_REG(VM_REG_PC)] << std::endl;
+		// TODO: Better dump with register names?
+		for(uint32_t i = 0; i < VM_REG32_COUNT; i++){
+			std::cout << "CPU.REG[" << i << "] = " << std::hex << exec.state.reg[i] << std::dec << "\t\t";
+			if(i != 0 && (i % 4 == 0))
+				std::cout << std::endl;
+		}
+		return -1;
+	}
 
 	if(!ARG_DUMP_PATH.empty()){
 		debug_printf("Generating a memory dump file");

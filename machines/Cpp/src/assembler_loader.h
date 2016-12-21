@@ -140,6 +140,7 @@ class asm_loader {
 			add_op_dict("CALL", OPCODE_VARIANT, VM_OPCODE_CALL);
 			add_op_dict("RET", OPCODE_NO_ARGUMENTS, VM_OPCODE_RET);
 			add_op_dict("BREAK", OPCODE_NO_ARGUMENTS, VM_OPCODE_BREAK);
+			add_op_dict("FAIL", OPCODE_NO_ARGUMENTS, VM_OPCODE_FAIL);
 
 			add_reg_dict("PC", VM_REG_PC);
 			add_reg_dict("FLAGS", VM_REG_FLAGS);

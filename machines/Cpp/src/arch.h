@@ -30,6 +30,7 @@ enum _vm_opcodes {
 	VM_OPCODE_CALL,
 	VM_OPCODE_RET,
 	VM_OPCODE_BREAK,
+	VM_OPCODE_FAIL,
 
 	_VM_OPCODE_LIMIT_
 };
@@ -62,7 +63,8 @@ const uint32_t vm_opcode_length[] = {
 	1, // VM_OPCODE_POP
 	2, // VM_OPCODE_CALL
 	1, // VM_OPCODE_RET
-	1 // VM_OPCODE_BREAK
+	1, // VM_OPCODE_BREAK
+	1 // VM_OPCODE_FAIL 
 };
 
 enum _vm_registers {

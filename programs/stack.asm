@@ -36,7 +36,7 @@ _pop_some:
     JMP @_pop_some
 
 _error:
-    BREAK # Handle?
+    fail
 
 _end:
     BREAK

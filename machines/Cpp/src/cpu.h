@@ -8,17 +8,27 @@
 #define REG_OP_CHECK(reg) if(VM_REG(reg) == 0 || VM_REG(reg) > VM_REG32_COUNT-1)
 #define VARIANT_DETERMINE(vptr, instruction, state) vptr=&instruction->oVAL;if(instruction->OPTS & VM_OPT_VARIANT_REG)vptr=&state.reg[VM_REG(instruction->REG2)]
 
+enum _vm_cpu_status_flags {
+	VM_STATUS_UNDEFINED = 0,
+
+	VM_STATUS_RUNNING,
+	VM_STATUS_BREAKPOINT,
+	VM_STATUS_FAILED
+};
+typedef _vm_cpu_status_flags vm_cpu_status_flags;
+
 struct _vm_cpu_state {
 	// All 32 bit registers
 	uint32_t reg[VM_REG32_COUNT];
+	vm_cpu_status_flags status;
 };
 typedef _vm_cpu_state vm_cpu_state;
 
 class vm_cpu {
 	private:
 		vm_memory_controller* mem;
-		vm_cpu_state state;
 	public:
+		vm_cpu_state state;
 
 		vm_cpu(vm_memory_controller* pmem) : mem(pmem) {
 			reset_state();
@@ -37,6 +47,8 @@ class vm_cpu {
 			vm_memcell_ext fetch;
 			vm_instruction* instruction = (vm_instruction*)&fetch;
 			uint32_t* vptr;
+
+			state.status = VM_STATUS_RUNNING;
 
 			fetch:
 			debug_printf("Fetching instruction at %u", state.reg[VM_REG(VM_REG_PC)]);
@@ -95,6 +107,7 @@ class vm_cpu {
 				case VM_OPCODE_CALL: goto OP_CALL; break;
 				case VM_OPCODE_RET: goto OP_RET; break;
 				case VM_OPCODE_BREAK: goto OP_BREAK; break;
+				case VM_OPCODE_FAIL: goto OP_FAIL; break;
 				default:
 					debug_printf("CPU Encountered an unimplemented instruction %u at %u", instruction->OPCODE, state.reg[VM_REG(VM_REG_PC)]);
 					goto finish;
@@ -345,6 +358,12 @@ class vm_cpu {
 
 			OP_BREAK:
 				debug_printf("CPU BREAK at %u", state.reg[VM_REG(VM_REG_PC)]);
+				state.status = VM_STATUS_BREAKPOINT;
+				return;
+			
+			OP_FAIL:
+				debug_printf("CPU FAIL at %u", state.reg[VM_REG(VM_REG_PC)]);
+				state.status = VM_STATUS_FAILED;
 				return;
 
 			finish:

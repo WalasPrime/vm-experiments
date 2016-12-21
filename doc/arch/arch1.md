@@ -49,3 +49,4 @@ POP | POP REG | REG = [SS:SP]; SP-- | Pop a value into a register from the stack
 CALL | CALL REG/VAL | PUSH PC; JMP VAL | Push the current instruction number onto the stack then jump to the target instruction number (procedures and functions)
 RET | RET | POP PC; PC++ | Pop an address from the stack then jump *after* it (end of procedures and functions)
 BREAK | BREAK | | Forcefully stop VM execution (breakpoint)
+FAIL | FAIL | | Stop VM execution with a runtime error

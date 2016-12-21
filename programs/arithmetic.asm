@@ -44,4 +44,4 @@ end:
 	break
 
 error:
-	break
+	fail
