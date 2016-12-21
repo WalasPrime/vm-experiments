@@ -22,7 +22,6 @@ PHP | | Planned after architecture upgrades
 
 # About the machine
 
-* [Machine architecture](#architecture)
 * [Assembly](#assembly-markdown)
 * [Architectures](#architectures)
 * [Testing](#testing)

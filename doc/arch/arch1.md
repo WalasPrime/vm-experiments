@@ -2,7 +2,7 @@
 The most basic architecture for VMs to be implemented. Includes subprograms, integer operations and flow control. No Input-Output is defined (pure benchmarking of programs).
 
 ## Memory
-Addressed with 32 bits. No segmentation is defined (the whole memory is a huge segment). Each address points at a 32 bit value. It is recommended to implement dynamic memory management in every VM (eg. divide the memory space into segments allocated at runtime if accessed). Loaded programs will be put at the begining of the memory space. The stack is also allocated in this memory (defined with an offset), the stack grows incrementaly (after using `PUSH` the stack pointer will increase).
+Addressed with 32 bits. No segmentation is defined (the whole memory is a huge segment). Each address points at a 32 bit value. It is recommended to implement dynamic memory management in every VM (eg. divide the memory space into segments allocated at runtime if accessed). Loaded programs will be put at the begining of the memory space. The stack is also allocated in this memory (defined with an offset), the stack grows incrementaly (after using `PUSH` the stack pointer will increase). Arithmetics are defined only for *unsigned 32 bit* values.
 
 ## CPU
 Register name | Size | Notes
