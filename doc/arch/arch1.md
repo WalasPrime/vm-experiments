@@ -31,8 +31,10 @@ Name | Instruction usage | Definition | Affected flags/Notes
 MOV | MOV REG1 REG2/VAL | REG1 = REG2/VAL | Z
 ADD | ADD REG1 REG2/VAL | ACC = REG1 + REG2/VAL | CZ
 ADC | ADC REG1 REG2/VAL | ACC = REG1 + REG2/VAL + (FLAGS[C] ? 1 : 0) | CZ
+INC | INC REG | REG = REG + 1 | Z
 SUB | SUB REG1 REG2/VAL | ACC = REG1 - REG2/VAL | CZL
 SBC | SBC REG1 REG2/VAL | ACC = REG1 - REG2/VAL - (FLAGS[C] ? 1 : 0) | CZL
+DEC | DEC REG | REG = REG - 1 | Z
 CLF | | FLAGS=0 | Clear flags
 LOAD | LOAD REG1 REG2/VAL | REG1 = [DS:REG2/VAL] | Load a 32 bit value from the memory, addressed with DS + VAL, into any register
 SAVE | SAVE REG1 REG2/VAL | [DS:REG2/VAL] = REG1 | Save a 32 bit value from any register to address DS + VAL

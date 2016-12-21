@@ -30,6 +30,24 @@ _start:
 	JNE @error
 	CALL @score
 
+	MOV R1 0
+	INC R1
+	CMP R1 1
+	JNE @error
+	CALL @score
+
+	MOV R1 1
+	DEC R1
+	CMP R1 0
+	JNE @error
+	CALL @score
+
+	MOV R1 0
+	DEC R1
+	CMP R1 4294967295
+	JNE @error
+	CALL @score
+
 	jmp @end
 
 score:

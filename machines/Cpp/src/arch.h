@@ -8,8 +8,10 @@ enum _vm_opcodes {
 	//VM_OPCODE_CMOV,
 	VM_OPCODE_ADD,
 	VM_OPCODE_ADC,
+	VM_OPCODE_INC,
 	VM_OPCODE_SUB,
 	VM_OPCODE_SBC,
+	VM_OPCODE_DEC,
 
 	VM_OPCODE_CLF,
 	VM_OPCODE_CMP,
@@ -42,8 +44,10 @@ const uint32_t vm_opcode_length[] = {
 	//2, // VM_OPCODE_CMOV
 	2, // VM_OPCODE_ADD
 	2, // VM_OPCODE_ADC
+	1, // VM_OPCODE_INC
 	2, // VM_OPCODE_SUB
 	2, // VM_OPCODE_SBC
+	2, // VM_OPCODE_DEC
 
 	1, // VM_OPCODE_CLF
 	2, // VM_OPCODE_CMP

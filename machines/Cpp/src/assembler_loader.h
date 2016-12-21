@@ -122,8 +122,10 @@ class asm_loader {
 			//add_op_dict("CMOV", OPCODE_REG_VALUE_32BIT, VM_OPCODE_CMOV);
 			add_op_dict("ADD", OPCODE_REG_VARIANT, VM_OPCODE_ADD);
 			add_op_dict("ADC", OPCODE_REG_VARIANT, VM_OPCODE_ADC);
+			add_op_dict("INC", OPCODE_REG, VM_OPCODE_INC);
 			add_op_dict("SUB", OPCODE_REG_VARIANT, VM_OPCODE_SUB);
 			add_op_dict("SBC", OPCODE_REG_VARIANT, VM_OPCODE_SBC);
+			add_op_dict("DEC", OPCODE_REG, VM_OPCODE_DEC);
 			add_op_dict("CLF", OPCODE_NO_ARGUMENTS, VM_OPCODE_CLF);
 			add_op_dict("LOAD", OPCODE_REG_VARIANT, VM_OPCODE_LOAD);
 			add_op_dict("SAVE", OPCODE_REG_VARIANT, VM_OPCODE_SAVE);

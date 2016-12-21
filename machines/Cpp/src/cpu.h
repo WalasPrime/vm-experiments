@@ -85,8 +85,10 @@ class vm_cpu {
 				case VM_OPCODE_MOV: goto OP_MOV; break;
 				case VM_OPCODE_ADD: goto OP_ADD; break;
 				case VM_OPCODE_ADC: goto OP_ADC; break;
+				case VM_OPCODE_INC: goto OP_INC; break;
 				case VM_OPCODE_SUB: goto OP_SUB; break;
 				case VM_OPCODE_SBC: goto OP_SBC; break;
+				case VM_OPCODE_DEC: goto OP_DEC; break;
 
 				case VM_OPCODE_CLF: goto OP_CLF; break;
 				case VM_OPCODE_CMP: goto OP_CMP; break;
@@ -176,6 +178,19 @@ class vm_cpu {
 				// FIXME: This kind of ignores the case if REG2 is 0xFFFFFFFF when we have to set the carry flag
 			goto OP_ADD;
 
+			OP_INC:
+				REG_OP_CHECK(instruction->REG1){
+					debug_printf("CPU INC Invalid register argument at %u", state.reg[VM_REG(VM_REG_PC)]);
+					return;
+				}
+				state.reg[VM_REG(instruction->REG1)]++;
+				if(VM_REG(instruction->REG1) == 0){
+					state.reg[VM_REG(VM_REG_FLAGS)] |= VM_FLAG_Z;
+				}else{
+					state.reg[VM_REG(VM_REG_FLAGS)] &= ~VM_FLAG_Z;
+				}
+			goto finish;
+
 			OP_SUB:
 				REG_VARIANT_OP_CHECK(instruction){
 					debug_printf("CPU SUB Invalid register argument at %u", state.reg[VM_REG(VM_REG_PC)]);
@@ -207,6 +222,19 @@ class vm_cpu {
 				instruction->oVAL++;
 				// FIXME: Same as ADC
 			goto OP_SUB;
+
+			OP_DEC:
+				REG_OP_CHECK(instruction->REG1){
+					debug_printf("CPU DEC Invalid register argument at %u", state.reg[VM_REG(VM_REG_PC)]);
+					return;
+				}
+				state.reg[VM_REG(instruction->REG1)]--;
+				if(VM_REG(instruction->REG1) == 0){
+					state.reg[VM_REG(VM_REG_FLAGS)] |= VM_FLAG_Z;
+				}else{
+					state.reg[VM_REG(VM_REG_FLAGS)] &= ~VM_FLAG_Z;
+				}
+			goto finish;
 
 			OP_CLF:
 				state.reg[VM_REG(VM_REG_FLAGS)] = 0;
