@@ -24,6 +24,12 @@ _start:
 	JNE @error
 	CALL @score
 
+	MOV R1 0
+	SUB R1 1
+	CMP ACC 4294967295
+	JNE @error
+	CALL @score
+
 	jmp @end
 
 score:
