@@ -9,11 +9,11 @@ SCons Argument | Values | Meaning
 ---- | ---- | ----
 DEBUG | 0,1 | Build machines with verbose output and additional checks
 
-## Current machines
-Machine name | Description | Status
----- | ---- | ----
+## Machines
+Machine name | Description | Status | Docs
+---- | ---- | ---- | ----
 C | Pure C machine | On-hold, incomplete
-Cpp | Mixed C/C++ machine | Arch-1 Work-in-progress
+Cpp | Mixed C/C++ machine | Arch-1 (not fully tested) | [Docs](doc/machines/cpp.md)
 Cpp-ASM | Mixed C/C++/ASM (highly optimised) machine | Planned after architecture upgrades
 Java | | Planned after architecture upgrades
 JavaScript | Native JavaScript | Planned after architecture upgrades
