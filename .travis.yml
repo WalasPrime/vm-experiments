@@ -16,4 +16,5 @@ before_script:
   - if [ "$DEBUG_MODE" = "1" ]; then export DEBUG_SUFFIX=_debug; fi
 script:
   - scons DEBUG=$DEBUG_MODE
+  - cd machines/Node.js && npm install && npm test
   - python scripts/testsuite/test_programs.py DEBUG=$DEBUG_MODE

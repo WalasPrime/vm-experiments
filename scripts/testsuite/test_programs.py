@@ -23,10 +23,26 @@ def Cpp_process(appPath, dumpTargetPath='', dumpAddress=0, dumpLength=0):
 		print(out)
 	return p.returncode == 0
 
+def Node_process(appPath, dumpTargetPath='', dumpAddress=0, dumpLength=0):
+	optcmds = []
+	if DEBUG:
+		optcmds = optcmds + ['-d']
+	if dumpTargetPath:
+		optcmds = optcmds + ['--memdump', dumpTargetPath, '--dumpaddr', str(dumpAddress), '--dumplength', str(dumpLength)]
+	p = subprocess.Popen(['node', 'machines/Node.js/index.js', '--program', appPath]+optcmds, stdout=subprocess.PIPE)
+	out, err = p.communicate()
+	status = "OK" if p.returncode == 0 else "FAILED !!!"
+	print("Node"+DEBUG_SUFFIX+": "+status)
+	if p.returncode != 0:
+		print("Output was:")
+		print(out)
+	return p.returncode == 0
+
 # End of machine call definitions
 # Add your machine to the dictionary below
 machines = {
-	"Cpp": Cpp_process
+	"Cpp": Cpp_process,
+	"Node.js": Node_process
 }
 
 # Returns basic information about the memory dump file
@@ -74,9 +90,9 @@ for name in compTests:
 		continue
 	print("Mem @ "+str(addr)+" len "+str(length))
 
-	ndumpname = './programs/'+name+'__result.memdump'
-
 	for machine, execute in machines.iteritems():
+		ndumpname = './programs/'+name+'_'+machine+'__result.memdump'
+
 		if(not execute('./programs/'+name+'.asm', ndumpname, addr, length)):
 			allOk = 0
 			print("Cannot compare with expected memory dump (test failed)")
