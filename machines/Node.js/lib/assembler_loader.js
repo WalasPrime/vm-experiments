@@ -106,7 +106,6 @@ module.exports = function(print, debug){
 				OP[1] = (!w1_is_reg ? w1_uint : w2_uint) || 0;
 				debug('From instruction '+i.line+' code : '+OP[0]+' '+OP[1]);
 			}
-			OP[0] = i.opcode;
 			memory.writeUint32Array(i.location, OP);
 		}
 	}

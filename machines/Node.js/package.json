@@ -4,7 +4,7 @@
   "description": "vm-experiments node.js machine",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "node tests/memory.js"
   },
   "keywords": [],
   "url": "https://github.com/WalasPrime/vm-experiments",
@@ -12,5 +12,8 @@
   "license": "GPL-3.0",
   "dependencies": {
     "minimist": "^1.2.0"
+  },
+  "devDependencies": {
+    "blue-tape": "^1.0.0"
   }
 }

@@ -23,4 +23,4 @@ console.log('Memory, segment size: '+MEM.SEGMENT_SIZE);
 console.log('Memory, segments: '+MEM.SEGMENTS);
 
 ASM.compile(asm_file, MEM);
-CPU.execute();
+CPU.execute(true);
