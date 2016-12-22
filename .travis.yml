@@ -6,15 +6,15 @@ compiler:
 env:
   - DEBUG_MODE=1
   - DEBUG_MODE=0
-before_install:
-  - curl -sL https://deb.nodesource.com/setup_6.x | sudo -E bash -
-  - sudo apt-get install -y nodejs
-  - node -v
-  - npm -v
+install:
+  - rm -rf ~/.nvm && git clone https://github.com/creationix/nvm.git ~/.nvm && (cd ~/.nvm && git checkout `git describe --abbrev=0 --tags`) && source ~/.nvm/nvm.sh && nvm install 6.9
+  - cd machines/Node.js && npm install && cd ../..
 before_script:
   - export DEBUG_SUFFIX=
   - if [ "$DEBUG_MODE" = "1" ]; then export DEBUG_SUFFIX=_debug; fi
+  - node -v
+  - npm -v
 script:
   - scons DEBUG=$DEBUG_MODE
-  - cd machines/Node.js && npm install && npm test
+  - cd machines/Node.js && npm test && cd ../..
   - python scripts/testsuite/test_programs.py DEBUG=$DEBUG_MODE
