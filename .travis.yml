@@ -1,11 +1,18 @@
 language: c
-sudo: false
+sudo: required
 compiler:
   - clang
   - gcc
 env:
   - DEBUG_MODE=1
   - DEBUG_MODE=0
+before_install:
+  - sudo apt-get install xz-utils
+  # Node.js
+  - wget https://nodejs.org/dist/v6.9.2/node-v6.9.2-linux-x64.tar.xz
+  - tar -C /usr/local --strip-components 1 -xJf node-v6.9.2-linux-x64.tar.xz
+  - node -v
+  - npm -v
 before_script:
   - export DEBUG_SUFFIX=
   - if [ "$DEBUG_MODE" = "1" ]; then export DEBUG_SUFFIX=_debug; fi

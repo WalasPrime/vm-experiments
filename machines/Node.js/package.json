@@ -1,0 +1,16 @@
+{
+  "name": "vm-experiments-node",
+  "version": "0.0.1",
+  "description": "vm-experiments node.js machine",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "url": "https://github.com/WalasPrime/vm-experiments",
+  "author": "WalasPrime",
+  "license": "GPL-3.0",
+  "dependencies": {
+    "minimist": "^1.2.0"
+  }
+}

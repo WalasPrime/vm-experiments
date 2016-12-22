@@ -16,8 +16,8 @@ C | Pure C machine | On-hold, incomplete
 Cpp | Mixed C/C++ machine | Arch-1 (not fully tested) | [Docs](doc/machines/cpp.md)
 Cpp-ASM | Mixed C/C++/ASM (highly optimised) machine | Planned after architecture upgrades
 Java | | Planned after architecture upgrades
-JavaScript | Native JavaScript | Planned after architecture upgrades
-Node.js | Encapsulated JavaScript machine | Planned after JavaScript implementation
+JavaScript | Browserified Node machine | Planned after Node.js implementation
+Node.js | JavaScript machine | Arch-1 (Work-in-progress)
 PHP | | Planned after architecture upgrades
 
 # About the machine

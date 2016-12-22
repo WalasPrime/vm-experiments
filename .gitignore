@@ -3,3 +3,4 @@
 *.dblite
 *__result.memdump
 .vscode
+machines/Node.js/node_modules
