@@ -7,10 +7,8 @@ env:
   - DEBUG_MODE=1
   - DEBUG_MODE=0
 before_install:
-  - sudo apt-get install xz-utils
-  # Node.js
-  - wget https://nodejs.org/dist/v6.9.2/node-v6.9.2-linux-x64.tar.xz
-  - tar -C /usr/local --strip-components 1 -xJf node-v6.9.2-linux-x64.tar.xz
+  - curl -sL https://deb.nodesource.com/setup_6.x | sudo -E bash -
+  - sudo apt-get install -y nodejs
   - node -v
   - npm -v
 before_script:
