@@ -11,7 +11,7 @@ module.exports = function(print, debug){
 		this.mem = memory;
 
 		this.state = {
-			registers: new Uint32Array(dumbMaxPropertyVal(ARCH.REGS))
+			registers: new Uint32Array(dumbMaxPropertyVal(ARCH.REGS)+1)
 		}
 	}
 
